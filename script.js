@@ -1,7 +1,26 @@
-// Armazenamento de votos no localStorage
+// Inicializa votos se não existirem
 if (!localStorage.getItem('voted')) {
     localStorage.setItem('voted', 'false');
 }
+
+// Inicializa contadores de votos se não existirem
+const initializeVotes = () => {
+    const options = ['Tenho mas não posso levar', 'Não', 'Tenho e posso levar'];
+    options.forEach(option => {
+        if (!localStorage.getItem(`count-${option}`)) {
+            localStorage.setItem(`count-${option}`, '0');
+        }
+    });
+};
+
+// Função para carregar e exibir os votos
+const loadVotes = () => {
+    const options = ['Tenho mas não posso levar', 'Não', 'Tenho e posso levar'];
+    options.forEach(option => {
+        const count = parseInt(localStorage.getItem(`count-${option}`), 10);
+        document.getElementById(`count-${option}`).textContent = count;
+    });
+};
 
 // Função para enviar voto
 function submitVote() {
@@ -16,25 +35,20 @@ function submitVote() {
         return;
     }
     
-    const material = selectedOption.value;
+    const option = selectedOption.value;
     localStorage.setItem('voted', 'true');
     
-    // Atualiza contagem de votos (isso é apenas um exemplo, você precisaria integrar com um backend para armazenar dados reais)
     const counts = {
-        'Algodão': parseInt(localStorage.getItem('count-algodao') || '0', 10),
-        'Lã': parseInt(localStorage.getItem('count-la') || '0', 10),
-        'Sintético': parseInt(localStorage.getItem('count-sintetico') || '0', 10)
+        'Tenho mas não posso levar': parseInt(localStorage.getItem('count-Tenho mas não posso levar'), 10),
+        'Não': parseInt(localStorage.getItem('count-Não'), 10),
+        'Tenho e posso levar': parseInt(localStorage.getItem('count-Tenho e posso levar'), 10)
     };
     
-    counts[material]++;
+    counts[option]++;
     
-    localStorage.setItem('count-algodao', counts['Algodão']);
-    localStorage.setItem('count-la', counts['Lã']);
-    localStorage.setItem('count-sintetico', counts['Sintético']);
+    localStorage.setItem(`count-${option}`, counts[option]);
     
-    document.getElementById('count-algodao').textContent = counts['Algodão'];
-    document.getElementById('count-la').textContent = counts['Lã'];
-    document.getElementById('count-sintetico').textContent = counts['Sintético'];
+    loadVotes();
 }
 
 // Função para enviar mensagem no chat
@@ -44,13 +58,33 @@ function sendMessage() {
     
     if (message === '') return;
     
-    const messageElement = document.createElement('div');
-    messageElement.textContent = message;
+    const messages = JSON.parse(localStorage.getItem('messages')) || [];
+    messages.push(message);
+    localStorage.setItem('messages', JSON.stringify(messages));
     
-    document.getElementById('messages').appendChild(messageElement);
+    displayMessages();
     messageInput.value = '';
+}
+
+// Função para exibir mensagens do chat
+function displayMessages() {
+    const messagesDiv = document.getElementById('messages');
+    messagesDiv.innerHTML = '';
+    const messages = JSON.parse(localStorage.getItem('messages')) || [];
+    messages.forEach(msg => {
+        const messageElement = document.createElement('div');
+        messageElement.textContent = msg;
+        messagesDiv.appendChild(messageElement);
+    });
     
     // Rolagem automática para a mensagem mais recente
-    const messagesDiv = document.getElementById('messages');
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
+
+// Carregar votos e mensagens ao carregar a página
+window.onload = () => {
+    initializeVotes();
+    loadVotes();
+    displayMessages();
+};
+
