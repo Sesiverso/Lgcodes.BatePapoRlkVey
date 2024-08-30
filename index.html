@@ -57,49 +57,46 @@
         <div>
             <p>Escolha uma foto:</p>
             <div class="image-options">
-                <!-- Exemplo de opções de imagem -->
                 <div class="image-option" data-image="https://www.diariodepernambuco.com.br/static/app/noticia_127983242361/2024/05/16/952809/20240516183727142193o.jpg">
                     <img src="https://www.diariodepernambuco.com.br/static/app/noticia_127983242361/2024/05/16/952809/20240516183727142193o.jpg" alt="Foto 1">
                 </div>
                 <div class="image-option" data-image="https://preview.redd.it/what-is-your-favorite-sonic-meme-v0-t1pv65foxajb1.png?auto=webp&s=cc05c260c19666d0cb4feeb40298d37fad5066c5">
                     <img src="https://preview.redd.it/what-is-your-favorite-sonic-meme-v0-t1pv65foxajb1.png?auto=webp&s=cc05c260c19666d0cb4feeb40298d37fad5066c5" alt="Foto 2">
                 </div>
-                <div class="image-option" data-image="https://cdn-icons-png.flaticon.com/512/490/490091.png">
-                    <img src="https://cdn-icons-png.flaticon.com/512/490/490091.png" alt="Foto 3">
+                <div class="image-option" data-image="https://preview.redd.it/recreating-the-you-have-alerted-the-sonic-meme-v0-ivping97ll2a1.png?auto=webp&s=ca4d75183fbfe04464e31a7e6603bbda171b343c">
+                    <img src="https://preview.redd.it/recreating-the-you-have-alerted-the-sonic-meme-v0-ivping97ll2a1.png?auto=webp&s=ca4d75183fbfe04464e31a7e6603bbda171b343c" alt="Foto 3">
                 </div>
-                <div class="image-option" data-image="https://preview.redd.it/what-is-your-favorite-sonic-meme-v0-t1pv65foxajb1.png?auto=webp&s=cc05c260c19666d0cb4feeb40298d37fad5066c5">
-                    <img src="https://preview.redd.it/what-is-your-favorite-sonic-meme-v0-t1pv65foxajb1.png?auto=webp&s=cc05c260c19666d0cb4feeb40298d37fad5066c5" alt="Foto 4">
+                <div class="image-option" data-image="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9CKPkXd8vEKt-eSTnaYXRdXwAVsADQ95YrmYQ1Fr9n7kgtNJ">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9CKPkXd8vEKt-eSTnaYXRdXwAVsADQ95YrmYQ1Fr9n7kgtNJ" alt="Foto 4">
                 </div>
             </div>
+            <button id="start-chat">Iniciar Chat</button>
         </div>
-        <button id="confirm-button">Confirmar</button>
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                let selectedImageUrl = '';
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const imageOptions = document.querySelectorAll('.image-option');
+            let selectedImage = '';
 
-                document.querySelectorAll('.image-option').forEach(option => {
-                    option.addEventListener('click', () => {
-                        document.querySelectorAll('.image-option').forEach(el => el.classList.remove('selected'));
-                        option.classList.add('selected');
-                        selectedImageUrl = option.getAttribute('data-image');
-                    });
-                });
-
-                document.getElementById('confirm-button').addEventListener('click', () => {
-                    const username = document.getElementById('username').value.trim();
-                    
-                    if (username === '' || !selectedImageUrl) {
-                        alert('Por favor, insira seu nome e selecione uma foto.');
-                        return;
-                    }
-
-                    localStorage.setItem('username', username);
-                    localStorage.setItem('userImage', selectedImageUrl);
-
-                    window.location.href = 'chat.html';
+            imageOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    imageOptions.forEach(imgOption => imgOption.classList.remove('selected'));
+                    option.classList.add('selected');
+                    selectedImage = option.getAttribute('data-image');
                 });
             });
-        </script>
-    </div>
+
+            document.getElementById('start-chat').addEventListener('click', () => {
+                const username = document.getElementById('username').value.trim();
+                if (username && selectedImage) {
+                    localStorage.setItem('username', username);
+                    localStorage.setItem('userImage', selectedImage);
+                    window.location.href = 'chat.html';
+                } else {
+                    alert('Por favor, preencha seu nome e escolha uma foto.');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
