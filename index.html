@@ -9,38 +9,40 @@
 <body>
     <div class="container">
         <h1>Escolha seu Perfil</h1>
-        <div id="profile-selection">
-            <h2>Escolha uma foto de perfil:</h2>
-            <div class="image-options">
-                <button class="profile-btn" data-image="https://www.diariodepernambuco.com.br/static/app/noticia_127983242361/2024/05/16/952809/20240516183727142193o.jpg">
-                    <img src="https://www.diariodepernambuco.com.br/static/app/noticia_127983242361/2024/05/16/952809/20240516183727142193o.jpg" alt="Foto 1">
-                </button>
-                <button class="profile-btn" data-image="https://preview.redd.it/what-is-your-favorite-sonic-meme-v0-t1pv65foxajb1.png?auto=webp&s=cc05c260c19666d0cb4feeb40298d37fad5066c5">
-                    <img src="https://preview.redd.it/what-is-your-favorite-sonic-meme-v0-t1pv65foxajb1.png?auto=webp&s=cc05c260c19666d0cb4feeb40298d37fad5066c5" alt="Foto 2">
-                </button>
-                <button class="profile-btn" data-image="https://preview.redd.it/recreating-the-you-have-alerted-the-sonic-meme-v0-ivping97ll2a1.png?auto=webp&s=ca4d75183fbfe04464e31a7e6603bbda171b343c">
-                    <img src="https://preview.redd.it/recreating-the-you-have-alerted-the-sonic-meme-v0-ivping97ll2a1.png?auto=webp&s=ca4d75183fbfe04464e31a7e6603bbda171b343c" alt="Foto 3">
-                </button>
-                <button class="profile-btn" data-image="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9CKPkXd8vEKt-eSTnaYXRdXh6xh_8ciGoPQ&s">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9CKPkXd8vEKt-eSTnaYXRdXh6xh_8ciGoPQ&s" alt="Foto 4">
-                </button>
-                <button class="profile-btn" data-image="https://imagenes.elpais.com/resizer/v2/GLK77QHJ4JAY3KAFM5FV6YV5OM.webp?auth=09c184fe292b2932d6e90d1e57fd1dc21e111cc2044559c1cc5f7e5e04ae249d&width=414">
-                    <img src="https://imagenes.elpais.com/resizer/v2/GLK77QHJ4JAY3KAFM5FV6YV5OM.webp?auth=09c184fe292b2932d6e90d1e57fd1dc21e111cc2044559c1cc5f7e5e04ae249d&width=414" alt="Foto 5">
-                </button>
-                <button class="profile-btn" data-image="https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/WZEUY7Q6GMI6ZPVIGCHKCNCZJ4.jpg">
-                    <img src="https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/WZEUY7Q6GMI6ZPVIGCHKCNCZJ4.jpg" alt="Foto 6">
-                </button>
+        <form id="profile-form">
+            <div class="profile-picture-selection">
+                <label for="profile-name">Insira seu nome:</label>
+                <input type="text" id="profile-name" placeholder="Insira seu nome aqui" required>
+                
+                <div class="profile-images">
+                    <button type="button" class="profile-image-button" data-image-url="https://www.diariodepernambuco.com.br/static/app/noticia_127983242361/2024/05/16/952809/20240516183727142193o.jpg">
+                        <img src="https://www.diariodepernambuco.com.br/static/app/noticia_127983242361/2024/05/16/952809/20240516183727142193o.jpg" alt="Imagem 1">
+                    </button>
+                    <button type="button" class="profile-image-button" data-image-url="https://preview.redd.it/what-is-your-favorite-sonic-meme-v0-t1pv65foxajb1.png?auto=webp&s=cc05c260c19666d0cb4feeb40298d37fad5066c5">
+                        <img src="https://preview.redd.it/what-is-your-favorite-sonic-meme-v0-t1pv65foxajb1.png?auto=webp&s=cc05c260c19666d0cb4feeb40298d37fad5066c5" alt="Imagem 2">
+                    </button>
+                    <button type="button" class="profile-image-button" data-image-url="https://preview.redd.it/recreating-the-you-have-alerted-the-sonic-meme-v0-ivping97ll2a1.png?auto=webp&s=ca4d75183fbfe04464e31a7e6603bbda171b343c">
+                        <img src="https://preview.redd.it/recreating-the-you-have-alerted-the-sonic-meme-v0-ivping97ll2a1.png?auto=webp&s=ca4d75183fbfe04464e31a7e6603bbda171b343c" alt="Imagem 3">
+                    </button>
+                    <button type="button" class="profile-image-button" data-image-url="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9CKPkXd8vEKt-eSTnaYXRdXh6xh_8ciGoPQ&s">
+                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9CKPkXd8vEKt-eSTnaYXRdXh6xh_8ciGoPQ&s" alt="Imagem 4">
+                    </button>
+                    <button type="button" class="profile-image-button" data-image-url="https://imagenes.elpais.com/resizer/v2/GLK77QHJ4JAY3KAFM5FV6YV5OM.webp?auth=09c184fe292b2932d6e90d1e57fd1dc21e111cc2044559c1cc5f7e5e04ae249d&width=414">
+                        <img src="https://imagenes.elpais.com/resizer/v2/GLK77QHJ4JAY3KAFM5FV6YV5OM.webp?auth=09c184fe292b2932d6e90d1e57fd1dc21e111cc2044559c1cc5f7e5e04ae249d&width=414" alt="Imagem 5">
+                    </button>
+                    <button type="button" class="profile-image-button" data-image-url="https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/WZEUY7Q6GMI6ZPVIGCHKCNCZJ4.jpg">
+                        <img src="https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/WZEUY7Q6GMI6ZPVIGCHKCNCZJ4.jpg" alt="Imagem 6">
+                    </button>
+                </div>
             </div>
-            <input type="text" id="username" placeholder="Insira seu nome aqui" />
-            <div id="preview" style="display:none;">
-                <h2>Prévia do Perfil</h2>
-                <img id="preview-img" src="" alt="Prévia da Imagem" />
-                <p id="preview-name"></p>
-            </div>
-            <button id="confirm-btn" style="display:none;">OK</button>
+            <button type="submit" id="submit-profile">OK</button>
+        </form>
+        <div id="profile-preview" class="profile-preview" style="display:none;">
+            <h2>Prévia do seu Perfil</h2>
+            <img id="preview-image" src="" alt="Prévia da Imagem">
+            <p id="preview-name"></p>
         </div>
     </div>
     <script src="script.js"></script>
 </body>
 </html>
-
