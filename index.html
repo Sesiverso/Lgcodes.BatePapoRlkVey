@@ -7,24 +7,24 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Votação sobre Materiais de Pelúcia</h1>
+    <h1>Votação e Bate-Papo sobre Pelúcias</h1>
     
     <div id="voting">
-        <h2>Você Tem Pelucias de macado Em Casa?</h2>
+        <h2>Você tem algum macaco de pelúcia?</h2>
         <form id="vote-form">
-            <input type="radio" id="material1" name="material" value="Algodão">
-            <label for="material1">Tenho mas não posso levar</label><br>
-            <input type="radio" id="material2" name="material" value="Lã">
-            <label for="material2">Não</label><br>
-            <input type="radio" id="material3" name="material" value="Sintético">
-            <label for="material3">Tenho e Posso Levar</label><br><br>
+            <input type="radio" id="option1" name="material" value="Tenho mas não posso levar">
+            <label for="option1">Tenho mas não posso levar</label><br>
+            <input type="radio" id="option2" name="material" value="Não">
+            <label for="option2">Não</label><br>
+            <input type="radio" id="option3" name="material" value="Tenho e posso levar">
+            <label for="option3">Tenho e posso levar</label><br><br>
             <button type="button" onclick="submitVote()">Votar</button>
         </form>
         <h3>Resultados:</h3>
         <ul id="results">
-            <li>Algodão: <span id="count-algodao">0</span> votos</li>
-            <li>Lã: <span id="count-la">0</span> votos</li>
-            <li>Sintético: <span id="count-sintetico">0</span> votos</li>
+            <li>Tenho mas não posso levar: <span id="count-opcao1">0</span> votos</li>
+            <li>Não: <span id="count-opcao2">0</span> votos</li>
+            <li>Tenho e posso levar: <span id="count-opcao3">0</span> votos</li>
         </ul>
     </div>
     
