@@ -7,122 +7,21 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <div class="chat-section">
-            <h2>Chat</h2>
-            <div id="messages" class="chat-box"></div>
-            <div id="users" class="users-list"></div>
-            <input type="text" id="message-input" placeholder="Digite sua mensagem...">
-            <button id="send-button">Enviar</button>
-            <input type="file" id="file-input" />
+    <div class="chat-container">
+        <!-- Espaço para mensagens -->
+        <div id="messages" class="messages"></div>
+
+        <!-- Área para enviar mensagens e arquivos -->
+        <div class="input-area">
+            <input type="file" id="fileInput" accept="image/*,video/*">
+            <input type="text" id="messageInput" placeholder="Insira sua mensagem aqui">
+            <button id="sendButton">Enviar</button>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getDatabase, ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
-        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
-
-        // Configuração do Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyCuYhMag13uhVsYGo6KFkGFF5COH9fMWGI",
-            authDomain: "votacao-8176a.firebaseapp.com",
-            projectId: "votacao-8176a",
-            storageBucket: "votacao-8176a.appspot.com",
-            messagingSenderId: "444026858821",
-            appId: "1:444026858821:web:a59af301c2fb43eeac222c",
-            measurementId: "G-BEQ9LWFRCS"
-        };
-
-        // Inicializa o Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-        const storage = getStorage(app);
-
-        // Envia uma mensagem no chat
-        const sendMessage = () => {
-            const messageInput = document.getElementById('message-input');
-            const message = messageInput.value.trim();
-            if (message === '') return;
-
-            const username = localStorage.getItem('username');
-            const userImage = localStorage.getItem('userImage');
-
-            const messageObject = {
-                username: username,
-                image: userImage,
-                message: message,
-                timestamp: new Date().toISOString()
-            };
-
-            const messagesRef = ref(database, 'messages');
-            push(messagesRef, messageObject);
-            messageInput.value = '';
-        };
-
-        // Exibe mensagens no chat
-        const displayMessages = () => {
-            const messagesRef = ref(database, 'messages');
-            onValue(messagesRef, snapshot => {
-                const messagesDiv = document.getElementById('messages');
-                messagesDiv.innerHTML = '';
-                snapshot.forEach(childSnapshot => {
-                    const data = childSnapshot.val();
-                    const messageElement = document.createElement('div');
-
-                    const img = document.createElement('img');
-                    img.src = data.image;
-                    img.alt = data.username;
-                    img.width = 40;
-                    img.height = 40;
-
-                    const textElement = document.createElement('span');
-                    textElement.textContent = `${data.username}: ${data.message}`;
-
-                    messageElement.appendChild(img);
-                    messageElement.appendChild(textElement);
-                    messagesDiv.appendChild(messageElement);
-                });
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            });
-        };
-
-        // Envia um arquivo
-        const uploadFile = () => {
-            const fileInput = document.getElementById('file-input');
-            const file = fileInput.files[0];
-            if (!file) return;
-
-            const fileRef = storageRef(storage, `files/${file.name}`);
-            uploadBytes(fileRef, file).then(() => {
-                getDownloadURL(fileRef).then(url => {
-                    const messageObject = {
-                        username: localStorage.getItem('username'),
-                        image: localStorage.getItem('userImage'),
-                        message: `File uploaded: <a href="${url}" target="_blank">${file.name}</a>`,
-                        timestamp: new Date().toISOString()
-                    };
-                    const messagesRef = ref(database, 'messages');
-                    push(messagesRef, messageObject);
-                });
-            });
-        };
-
-        // Carrega e exibe usuários online
-        const loadUsers = () => {
-            // Esta função pode ser implementada se você quiser rastrear usuários online
-            // Você pode usar o Firebase Realtime Database para armazenar e listar usuários online
-        };
-
-        // Carrega mensagens e usuários ao carregar a página
-        window.onload = () => {
-            displayMessages();
-            loadUsers();
-        };
-
-        // Adiciona eventos aos botões
-        document.getElementById('send-button').addEventListener('click', sendMessage);
-        document.getElementById('file-input').addEventListener('change', uploadFile);
-    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.9.4/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.9.4/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.9.4/firebase-firestore.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
