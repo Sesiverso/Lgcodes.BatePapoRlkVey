@@ -9,199 +9,105 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background: #f0f0f0;
-            color: #333;
-        }
-        .container {
-            width: 80%;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .chat-section {
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            height: 500px; /* Ajuste a altura conforme necessário */
+            height: 100vh;
+            background-color: #f0f0f0;
         }
-        .chat-box {
-            flex: 1;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 10px;
-            background: #fff;
-            margin-bottom: 10px;
-        }
-        .chat-box div {
-            margin-bottom: 10px;
+        .chat-container {
             display: flex;
-            align-items: flex-start;
+            flex-direction: column;
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            background: #fff;
+            border-bottom: 1px solid #ddd;
         }
-        .chat-box img.profile-pic {
-            border-radius: 50%;
+        .message {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .message img {
             width: 40px;
             height: 40px;
+            border-radius: 50%;
             margin-right: 10px;
         }
-        .chat-box img.sent-image {
-            max-width: 200px;
-            max-height: 200px;
-            border-radius: 8px;
-            margin-left: 10px;
-        }
-        input[type="file"] {
-            display: none;
-        }
-        .file-upload-label {
-            background-color: #007bff;
-            color: #fff;
-            border: none;
+        .message .text {
+            background: #e1e1e1;
             padding: 10px;
             border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
+            max-width: 80%;
+        }
+        .input-container {
+            display: flex;
+            padding: 10px;
+            background: #fff;
+            border-top: 1px solid #ddd;
+        }
+        .input-container input, .input-container button {
             margin-right: 10px;
         }
-        button {
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        #message-input {
-            width: calc(100% - 80px);
+        .input-container input {
+            flex: 1;
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #ddd;
-            margin-right: 10px;
+        }
+        .input-container button {
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: none;
+            background: #007BFF;
+            color: #fff;
+            cursor: pointer;
+        }
+        .input-container button:hover {
+            background: #0056b3;
+        }
+        #call-button {
+            background: #28a745;
+        }
+        #call-button:hover {
+            background: #218838;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="chat-section">
-            <h2>Chat</h2>
-            <div id="messages" class="chat-box"></div>
-            <div>
-                <input type="file" id="file-input" />
-                <label for="file-input" class="file-upload-label">+</label>
-                <input type="text" id="message-input" placeholder="Digite sua mensagem...">
-                <button id="send-button">Enviar</button>
-            </div>
-        </div>
+    <div class="chat-container" id="chat-container">
+        <!-- Mensagens serão inseridas aqui pelo script -->
+    </div>
+    <div class="input-container">
+        <input type="text" id="message-input" placeholder="Insira sua mensagem aqui">
+        <button id="send-button">Enviar</button>
+        <button id="call-button">Iniciar Chamada</button>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getDatabase, ref, onValue, push } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
-        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
-
-        // Configuração do Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyCuYhMag13uhVsYGo6KFkGFF5COH9fMWGI",
-            authDomain: "votacao-8176a.firebaseapp.com",
-            databaseURL: "https://votacao-8176a-default-rtdb.firebaseio.com",
-            projectId: "votacao-8176a",
-            storageBucket: "votacao-8176a.appspot.com",
-            messagingSenderId: "444026858821",
-            appId: "1:444026858821:web:a59af301c2fb43eeac222c",
-            measurementId: "G-BEQ9LWFRCS"
-        };
-
-        // Inicializa o Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-        const storage = getStorage(app);
-
-        // Envia uma mensagem no chat
-        const sendMessage = (message, fileUrl = null) => {
-            const username = localStorage.getItem('username');
-            const userImage = localStorage.getItem('userImage');
-
-            const messageObject = {
-                username: username,
-                image: userImage,
-                message: message,
-                fileUrl: fileUrl,
-                timestamp: new Date().toISOString()
-            };
-
-            const messagesRef = ref(database, 'messages');
-            push(messagesRef, messageObject);
-        };
-
-        // Exibe mensagens no chat
-        const displayMessages = () => {
-            const messagesRef = ref(database, 'messages');
-            onValue(messagesRef, snapshot => {
-                const messagesDiv = document.getElementById('messages');
-                messagesDiv.innerHTML = '';
-                snapshot.forEach(childSnapshot => {
-                    const data = childSnapshot.val();
-                    const messageElement = document.createElement('div');
-
-                    const img = document.createElement('img');
-                    img.src = data.image;
-                    img.alt = data.username;
-                    img.className = 'profile-pic';
-
-                    messageElement.appendChild(img);
-
-                    if (data.fileUrl) {
-                        const fileImage = document.createElement('img');
-                        fileImage.src = data.fileUrl;
-                        fileImage.className = 'sent-image';
-                        messageElement.appendChild(fileImage);
-                    } else {
-                        const textElement = document.createElement('span');
-                        textElement.textContent = `${data.username}: ${data.message}`;
-                        messageElement.appendChild(textElement);
-                    }
-
-                    messagesDiv.appendChild(messageElement);
-                });
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            });
-        };
-
-        // Envia uma mensagem ao clicar no botão "Enviar"
+    <script>
+        // Adicione o código necessário para interagir com o chat e enviar mensagens
         document.getElementById('send-button').addEventListener('click', () => {
             const messageInput = document.getElementById('message-input');
-            const message = messageInput.value.trim();
-            if (message !== '') {
-                sendMessage(message);
+            const chatContainer = document.getElementById('chat-container');
+            const message = messageInput.value;
+
+            if (message.trim() !== '') {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message';
+                messageDiv.innerHTML = `
+                    <img src="https://www.example.com/default-profile-pic.jpg" alt="Foto de perfil">
+                    <div class="text">${message}</div>
+                `;
+                chatContainer.appendChild(messageDiv);
                 messageInput.value = '';
+                chatContainer.scrollTop = chatContainer.scrollHeight;
             }
         });
 
-        // Envia um arquivo ao selecionar um arquivo
-        document.getElementById('file-input').addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                const fileRef = storageRef(storage, `uploads/${file.name}`);
-                uploadBytes(fileRef, file).then((snapshot) => {
-                    getDownloadURL(snapshot.ref).then((url) => {
-                        sendMessage(null, url);
-                    });
-                }).catch((error) => {
-                    console.error('Erro ao enviar arquivo:', error);
-                });
-            }
+        document.getElementById('call-button').addEventListener('click', () => {
+            window.open('calls.html', '_blank');
         });
-
-        // Carrega mensagens ao carregar a página
-        window.onload = () => {
-            displayMessages();
-        };
     </script>
 </body>
 </html>
