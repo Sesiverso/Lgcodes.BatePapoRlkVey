@@ -143,12 +143,10 @@
                     messageElement.appendChild(img);
 
                     if (data.fileUrl) {
-                        if (data.fileUrl.match(/\.(jpeg|jpg|gif|png)$/) != null) {
-                            const fileImage = document.createElement('img');
-                            fileImage.src = data.fileUrl;
-                            fileImage.className = 'sent-image';
-                            messageElement.appendChild(fileImage);
-                        }
+                        const fileImage = document.createElement('img');
+                        fileImage.src = data.fileUrl;
+                        fileImage.className = 'sent-image';
+                        messageElement.appendChild(fileImage);
                     } else {
                         const textElement = document.createElement('span');
                         textElement.textContent = `${data.username}: ${data.message}`;
@@ -175,13 +173,11 @@
         document.getElementById('file-input').addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (file) {
-                const storageReference = storageRef(storage, 'uploads/' + file.name);
-                uploadBytes(storageReference, file).then((snapshot) => {
-                    getDownloadURL(snapshot.ref).then((downloadURL) => {
-                        sendMessage(null, downloadURL);
+                const fileRef = storageRef(storage, `uploads/${file.name}`);
+                uploadBytes(fileRef, file).then((snapshot) => {
+                    getDownloadURL(snapshot.ref).then((url) => {
+                        sendMessage(null, url);
                     });
-                }).catch((error) => {
-                    console.error("Erro ao enviar o arquivo:", error);
                 });
             }
         });
