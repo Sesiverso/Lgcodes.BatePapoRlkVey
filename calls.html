@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chamadas de Voz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 500px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        #video {
+            width: 100%;
+            height: 400px;
+            background-color: #000;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: none;
+            background-color: #007BFF;
+            color: #fff;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #end-call {
+            background-color: #dc3545;
+        }
+        #end-call:hover {
+            background-color: #c82333;
+        }
+        #accept, #decline {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chamadas de Voz</h1>
+        <div id="video">
+            <!-- Área para exibição do vídeo da chamada -->
+        </div>
+        <button id="start-call">Iniciar Chamada</button>
+        <button id="end-call">Encerrar Chamada</button>
+        <div id="incoming-call">
+            <button id="accept">Aceitar Chamada</button>
+            <button id="decline">Recusar Chamada</button>
+        </div>
+    </div>
+
+    <script>
+        // Lógica para aceitar e recusar chamadas
+        const params = new URLSearchParams(window.location.search);
+        const isCaller = params.get('caller') === 'true';
+
+        if (isCaller) {
+            document.getElementById('incoming-call').style.display = 'none';
+            document.getElementById('start-call').style.display = 'block';
+        } else {
+            document.getElementById('start-call').style.display = 'none';
+            document.getElementById('incoming-call').style.display = 'block';
+        }
+
+        document.getElementById('start-call').addEventListener('click', () => {
+            // Código para iniciar a chamada
+            alert('Chamada iniciada');
+        });
+
+        document.getElementById('end-call').addEventListener('click', () => {
+            // Código para encerrar a chamada
+            alert('Chamada encerrada');
+        });
+
+        document.getElementById('accept').addEventListener('click', () => {
+            // Código para aceitar a chamada
+            alert('Chamada aceita');
+        });
+
+        document.getElementById('decline').addEventListener('click', () => {
+            // Código para recusar a chamada
+            alert('Chamada recusada');
+            window.close();
+        });
+    </script>
+</body>
+</html>
