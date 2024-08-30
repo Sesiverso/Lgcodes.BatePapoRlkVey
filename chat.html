@@ -4,24 +4,174 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+            width: 80vw;
+            max-width: 800px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+        }
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+        .message {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .message img {
+            border-radius: 50%;
+            margin-right: 10px;
+            width: 40px;
+            height: 40px;
+        }
+        .message .content {
+            background-color: #e1f5fe;
+            padding: 10px;
+            border-radius: 8px;
+            max-width: 70%;
+        }
+        .input-container {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        input[type="file"], input[type="text"] {
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
     <div class="chat-container">
-        <!-- Espaço para mensagens -->
-        <div id="messages" class="messages"></div>
-
-        <!-- Área para enviar mensagens e arquivos -->
-        <div class="input-area">
-            <input type="file" id="fileInput" accept="image/*,video/*">
-            <input type="text" id="messageInput" placeholder="Insira sua mensagem aqui">
-            <button id="sendButton">Enviar</button>
+        <div class="messages" id="messages">
+            <!-- Mensagens e fotos dos usuários serão exibidos aqui -->
+        </div>
+        <div class="input-container">
+            <input type="file" id="fileInput" accept="image/*, .pdf, .docx">
+            <input type="text" id="messageInput" placeholder="Insira sua mensagem aqui...">
+            <button id="sendMessageButton">Enviar</button>
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.9.4/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.9.4/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.9.4/firebase-firestore.js"></script>
-    <script src="script.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js"></script>
+    <script>
+        // Importando funções do Firebase
+        import { initializeApp } from "firebase/app";
+        import { getAuth, onAuthStateChanged } from "firebase/auth";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot } from "firebase/firestore";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCuYhMag13uhVsYGo6KFkGFF5COH9fMWGI",
+            authDomain: "votacao-8176a.firebaseapp.com",
+            projectId: "votacao-8176a",
+            storageBucket: "votacao-8176a.appspot.com",
+            messagingSenderId: "444026858821",
+            appId: "1:444026858821:web:a59af301c2fb43eeac222c",
+            measurementId: "G-BEQ9LWFRCS"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        const messagesContainer = document.getElementById('messages');
+        const messageInput = document.getElementById('messageInput');
+        const fileInput = document.getElementById('fileInput');
+        const sendMessageButton = document.getElementById('sendMessageButton');
+
+        let user = null;
+
+        onAuthStateChanged(auth, (currentUser) => {
+            user = currentUser;
+            if (!user) {
+                window.location.href = 'index.html';
+            }
+        });
+
+        const messagesRef = collection(db, 'messages');
+        const q = query(messagesRef, orderBy('timestamp'));
+
+        onSnapshot(q, (querySnapshot) => {
+            messagesContainer.innerHTML = '';
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message');
+                
+                const profilePic = document.createElement('img');
+                profilePic.src = data.profilePic;
+                profilePic.alt = 'Profile Picture';
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.classList.add('content');
+                contentDiv.innerText = data.text;
+
+                messageDiv.appendChild(profilePic);
+                messageDiv.appendChild(contentDiv);
+                messagesContainer.appendChild(messageDiv);
+            });
+        });
+
+        sendMessageButton.addEventListener('click', async () => {
+            const text = messageInput.value;
+            const file = fileInput.files[0];
+
+            if (text || file) {
+                let fileURL = '';
+                if (file) {
+                    const fileRef = ref(storage, `chat_files/${file.name}`);
+                    await uploadBytes(fileRef, file);
+                    fileURL = await getDownloadURL(fileRef);
+                }
+
+                await addDoc(collection(db, 'messages'), {
+                    text: text,
+                    fileURL: fileURL,
+                    profilePic: user.photoURL || 'default-profile-pic-url', // Substitua por uma URL padrão de foto de perfil, se necessário
+                    timestamp: new Date()
+                });
+
+                messageInput.value = '';
+                fileInput.value = '';
+            }
+        });
+    </script>
 </body>
 </html>
