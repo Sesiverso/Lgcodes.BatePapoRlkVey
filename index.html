@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votação e Bate-Papo sobre Pelúcias</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Votação sobre Materiais de Pelúcia</h1>
+    
+    <div id="voting">
+        <h2>Vote em um material de pelúcia</h2>
+        <form id="vote-form">
+            <input type="radio" id="material1" name="material" value="Algodão">
+            <label for="material1">Algodão</label><br>
+            <input type="radio" id="material2" name="material" value="Lã">
+            <label for="material2">Lã</label><br>
+            <input type="radio" id="material3" name="material" value="Sintético">
+            <label for="material3">Sintético</label><br><br>
+            <button type="button" onclick="submitVote()">Votar</button>
+        </form>
+        <h3>Resultados:</h3>
+        <ul id="results">
+            <li>Algodão: <span id="count-algodao">0</span> votos</li>
+            <li>Lã: <span id="count-la">0</span> votos</li>
+            <li>Sintético: <span id="count-sintetico">0</span> votos</li>
+        </ul>
+    </div>
+    
+    <div id="chat">
+        <h2>Bate-Papo</h2>
+        <div id="messages"></div>
+        <input type="text" id="message-input" placeholder="Digite sua mensagem...">
+        <button onclick="sendMessage()">Enviar</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
