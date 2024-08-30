@@ -3,104 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chamadas de Voz</title>
+    <title>Chamada de Voz</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             background-color: #f0f0f0;
         }
-        .container {
-            max-width: 500px;
-            padding: 20px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        .call-container {
             text-align: center;
         }
-        #video {
-            width: 100%;
-            height: 400px;
-            background-color: #000;
-            border-radius: 8px;
-            margin-bottom: 20px;
+        .button-container {
+            margin-top: 20px;
         }
-        button {
-            padding: 10px 20px;
+        .call-button {
+            padding: 15px 30px;
             border-radius: 5px;
             border: none;
-            background-color: #007BFF;
-            color: #fff;
             cursor: pointer;
-            margin: 10px;
+            font-size: 16px;
+            margin: 5px;
         }
-        button:hover {
-            background-color: #0056b3;
+        .call-button.accept {
+            background-color: #28a745;
+            color: white;
         }
-        #end-call {
+        .call-button.reject {
             background-color: #dc3545;
+            color: white;
         }
-        #end-call:hover {
-            background-color: #c82333;
+        .call-button.end {
+            background-color: #007BFF;
+            color: white;
         }
-        #accept, #decline {
-            display: none;
+        .call-button:hover {
+            opacity: 0.8;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Chamadas de Voz</h1>
-        <div id="video">
-            <!-- Área para exibição do vídeo da chamada -->
-        </div>
-        <button id="start-call">Iniciar Chamada</button>
-        <button id="end-call">Encerrar Chamada</button>
-        <div id="incoming-call">
-            <button id="accept">Aceitar Chamada</button>
-            <button id="decline">Recusar Chamada</button>
+    <div class="call-container">
+        <h1>Chamada de Voz</h1>
+        <p id="call-status">Aguardando...</p>
+        <div class="button-container">
+            <button class="call-button accept" id="accept-call">Aceitar</button>
+            <button class="call-button reject" id="reject-call">Recusar</button>
+            <button class="call-button end" id="end-call" style="display:none;">Encerrar Chamada</button>
         </div>
     </div>
 
     <script>
-        // Lógica para aceitar e recusar chamadas
-        const params = new URLSearchParams(window.location.search);
-        const isCaller = params.get('caller') === 'true';
+        let localStream;
 
-        if (isCaller) {
-            document.getElementById('incoming-call').style.display = 'none';
-            document.getElementById('start-call').style.display = 'block';
-        } else {
-            document.getElementById('start-call').style.display = 'none';
-            document.getElementById('incoming-call').style.display = 'block';
+        // Solicitar permissão para acessar o microfone
+        async function getMicrophoneAccess() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                document.getElementById('call-status').innerText = "Microfone acessado. Pronto para a chamada.";
+            } catch (error) {
+                console.error('Erro ao acessar o microfone:', error);
+                document.getElementById('call-status').innerText = "Erro ao acessar o microfone.";
+            }
         }
 
-        document.getElementById('start-call').addEventListener('click', () => {
-            // Código para iniciar a chamada
-            alert('Chamada iniciada');
+        // Iniciar chamada de voz
+        document.getElementById('accept-call').addEventListener('click', () => {
+            document.getElementById('accept-call').style.display = 'none';
+            document.getElementById('reject-call').style.display = 'none';
+            document.getElementById('end-call').style.display = 'inline-block';
+            document.getElementById('call-status').innerText = "Chamada em andamento...";
+            // Aqui, você poderia iniciar a conexão de voz real (WebRTC, etc.)
         });
 
+        // Recusar chamada
+        document.getElementById('reject-call').addEventListener('click', () => {
+            window.close(); // Fecha a aba de chamada
+        });
+
+        // Encerrar chamada
         document.getElementById('end-call').addEventListener('click', () => {
-            // Código para encerrar a chamada
-            alert('Chamada encerrada');
+            // Aqui, você encerraria a conexão de voz real
+            document.getElementById('call-status').innerText = "Chamada encerrada. Redirecionando...";
+            setTimeout(() => {
+                window.location.href = 'chat.html'; // Redireciona para o chat.html após 3 segundos
+            }, 3000);
         });
 
-        document.getElementById('accept').addEventListener('click', () => {
-            // Código para aceitar a chamada
-            alert('Chamada aceita');
-        });
-
-        document.getElementById('decline').addEventListener('click', () => {
-            // Código para recusar a chamada
-            alert('Chamada recusada');
-            window.close();
-        });
+        // Solicitar acesso ao microfone ao carregar a página
+        getMicrophoneAccess();
     </script>
 </body>
 </html>
