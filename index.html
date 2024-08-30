@@ -1,140 +1,93 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuração de Perfil</title>
+    <title>Configurações de Perfil</title>
     <style>
+        /* Estilos básicos para as imagens e o formulário */
         body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
         }
-        .container {
-            max-width: 500px;
-            padding: 20px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        .profile-container {
             text-align: center;
         }
-        .profile-pic {
+        .profile-image {
             width: 100px;
             height: 100px;
             border-radius: 50%;
-            margin-bottom: 20px;
             object-fit: cover;
-        }
-        input {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            width: calc(100% - 22px);
-        }
-        .button-container {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .button-container img {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: border 0.3s;
-        }
-        .button-container img.selected {
-            border: 2px solid #007BFF;
-        }
-        button {
-            padding: 10px 20px;
-            border-radius: 5px;
-            border: none;
-            background-color: #007BFF;
-            color: #fff;
-            cursor: pointer;
             margin: 10px;
         }
-        button:hover {
-            background-color: #0056b3;
+        #preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+            border: 2px solid #000;
+        }
+        .circle-container {
+            display: flex;
+            justify-content: center;
+        }
+        .circle-container img {
+            cursor: pointer;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            margin: 0 10px;
+            object-fit: cover;
+            border: 2px solid transparent;
+        }
+        .circle-container img.selected {
+            border-color: blue;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Configuração de Perfil</h1>
-        <img id="profile-preview" class="profile-pic" src="https://www.example.com/default-profile-pic.jpg" alt="Imagem de perfil">
-        <input type="text" id="name-input" placeholder="Insira seu nome aqui">
-
-        <div class="button-container">
-            <img src="https://www.diariodepernambuco.com.br/static/app/noticia_127983242361/2024/05/16/952809/20240516183727142193o.jpg" alt="Imagem 1" data-src="https://www.diariodepernambuco.com.br/static/app/noticia_127983242361/2024/05/16/952809/20240516183727142193o.jpg">
-            <img src="https://preview.redd.it/what-is-your-favorite-sonic-meme-v0-t1pv65foxajb1.png?auto=webp&s=cc05c260c19666d0cb4feeb40298d37fad5066c5" alt="Imagem 2" data-src="https://preview.redd.it/what-is-your-favorite-sonic-meme-v0-t1pv65foxajb1.png?auto=webp&s=cc05c260c19666d0cb4feeb40298d37fad5066c5">
-            <img src="https://preview.redd.it/recreating-the-you-have-alerted-the-sonic-meme-v0-ivping97ll2a1.png?auto=webp&s=ca4d75183fbfe04464e31a7e6603bbda171b343c" alt="Imagem 3" data-src="https://preview.redd.it/recreating-the-you-have-alerted-the-sonic-meme-v0-ivping97ll2a1.png?auto=webp&s=ca4d75183fbfe04464e31a7e6603bbda171b343c">
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9CKPkXd8vEKt-eSTnaYXRdXh6xh_8ciGoPQ&s" alt="Imagem 4" data-src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9CKPkXd8vEKt-eSTnaYXRdXh6xh_8ciGoPQ&s">
-            <img src="https://imagenes.elpais.com/resizer/v2/GLK77QHJ4JAY3KAFM5FV6YV5OM.webp?auth=09c184fe292b2932d6e90d1e57fd1dc21e111cc2044559c1cc5f7e5e04ae249d&width=414" alt="Imagem 5" data-src="https://imagenes.elpais.com/resizer/v2/GLK77QHJ4JAY3KAFM5FV6YV5OM.webp?auth=09c184fe292b2932d6e90d1e57fd1dc21e111cc2044559c1cc5f7e5e04ae249d&width=414">
-            <img src="https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/WZEUY7Q6GMI6ZPVIGCHKCNCZJ4.jpg" alt="Imagem 6" data-src="https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/WZEUY7Q6GMI6ZPVIGCHKCNCZJ4.jpg">
+    <div class="profile-container">
+        <h2>Selecione sua imagem de perfil e insira seu nome:</h2>
+        <img id="preview" src="https://via.placeholder.com/100" alt="Preview">
+        <input type="text" id="username" placeholder="Insira seu nome aqui">
+        <div class="circle-container">
+            <img src="https://www.diariodepernambuco.com.br/static/app/noticia_127983242361/2024/05/16/952809/20240516183727142193o.jpg" class="profile-image">
+            <img src="https://preview.redd.it/what-is-your-favorite-sonic-meme-v0-t1pv65foxajb1.png?auto=webp&s=cc05c260c19666d0cb4feeb40298d37fad5066c5" class="profile-image">
+            <img src="https://preview.redd.it/recreating-the-you-have-alerted-the-sonic-meme-v0-ivping97ll2a1.png?auto=webp&s=ca4d75183fbfe04464e31a7e6603bbda171b343c" class="profile-image">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9CKPkXd8vEKt-eSTnaYXRdXh6xh_8ciGoPQ&s" class="profile-image">
+            <img src="https://imagenes.elpais.com/resizer/v2/GLK77QHJ4JAY3KAFM5FV6YV5OM.webp?auth=09c184fe292b2932d6e90d1e57fd1dc21e111cc2044559c1cc5f7e5e04ae249d&width=414" class="profile-image">
+            <img src="https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/WZEUY7Q6GMI6ZPVIGCHKCNCZJ4.jpg" class="profile-image">
         </div>
-
-        <button id="save-button">Salvar</button>
+        <button onclick="saveProfile()">OK</button>
     </div>
 
     <script>
-        const nameInput = document.getElementById('name-input');
-        const profilePicUrl = document.getElementById('profile-pic-url');
-        const profilePreview = document.getElementById('profile-preview');
-        const saveButton = document.getElementById('save-button');
-        const imageOptions = document.querySelectorAll('.button-container img');
+        // Lógica para selecionar a imagem e salvar no localStorage
+        const images = document.querySelectorAll('.profile-image');
+        let selectedImage = '';
 
-        let selectedPic = '';
-
-        // Atualizar pré-visualização da imagem
-        imageOptions.forEach(img => {
-            img.addEventListener('click', () => {
-                imageOptions.forEach(image => image.classList.remove('selected'));
-                img.classList.add('selected');
-                selectedPic = img.getAttribute('data-src');
-                profilePreview.src = selectedPic;
+        images.forEach(image => {
+            image.addEventListener('click', () => {
+                images.forEach(img => img.classList.remove('selected'));
+                image.classList.add('selected');
+                selectedImage = image.src;
+                document.getElementById('preview').src = selectedImage;
             });
         });
 
-        // Carregar dados existentes
-        const storedName = localStorage.getItem('userName');
-        const storedPic = localStorage.getItem('userPic');
-
-        if (storedName) {
-            nameInput.value = storedName;
-        }
-        if (storedPic) {
-            profilePreview.src = storedPic;
-            imageOptions.forEach(img => {
-                if (img.getAttribute('data-src') === storedPic) {
-                    img.classList.add('selected');
-                }
-            });
-        }
-
-        // Salvar dados
-        saveButton.addEventListener('click', () => {
-            const userName = nameInput.value;
-            
-            if (userName && selectedPic) {
-                localStorage.setItem('userName', userName);
-                localStorage.setItem('userPic', selectedPic);
+        function saveProfile() {
+            const username = document.getElementById('username').value;
+            if (username && selectedImage) {
+                localStorage.setItem('username', username);
+                localStorage.setItem('profileImage', selectedImage);
                 window.location.href = 'chat.html';
             } else {
-                alert('Por favor, selecione uma imagem e insira um nome.');
+                alert('Por favor, insira seu nome e escolha uma imagem.');
             }
-        });
+        }
     </script>
 </body>
 </html>
