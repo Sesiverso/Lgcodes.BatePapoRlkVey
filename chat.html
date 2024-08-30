@@ -22,14 +22,18 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 500px; /* Ajuste a altura conforme necessário */
         }
         .chat-box {
-            max-height: 300px;
+            flex: 1;
             overflow-y: auto;
             border: 1px solid #ddd;
             border-radius: 8px;
             padding: 10px;
             background: #fff;
+            margin-bottom: 10px;
         }
         .chat-box div {
             margin-bottom: 10px;
@@ -73,6 +77,13 @@
         button:hover {
             background-color: #0056b3;
         }
+        #message-input {
+            width: calc(100% - 80px);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -80,10 +91,12 @@
         <div class="chat-section">
             <h2>Chat</h2>
             <div id="messages" class="chat-box"></div>
-            <input type="file" id="file-input" />
-            <label for="file-input" class="file-upload-label">+</label>
-            <input type="text" id="message-input" placeholder="Digite sua mensagem...">
-            <button id="send-button">Enviar</button>
+            <div>
+                <input type="file" id="file-input" />
+                <label for="file-input" class="file-upload-label">+</label>
+                <input type="text" id="message-input" placeholder="Digite sua mensagem...">
+                <button id="send-button">Enviar</button>
+            </div>
         </div>
     </div>
 
