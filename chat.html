@@ -27,6 +27,9 @@
         .vote-option {
             margin-bottom: 10px;
         }
+        .vote-option label {
+            margin-left: 10px;
+        }
         .chat-box {
             max-height: 300px;
             overflow-y: auto;
@@ -70,23 +73,17 @@
             <p>Você tem algum macaco de pelúcia?</p>
             <div class="vote-option">
                 <input type="radio" id="option1" name="material" value="Tenho mas não posso levar">
-                <label for="option1">Tenho mas não posso levar</label>
+                <label for="option1">Tenho mas não posso levar <span id="count-Tenho%20mas%20não%20posso%20levar">0</span></label>
             </div>
             <div class="vote-option">
                 <input type="radio" id="option2" name="material" value="Não">
-                <label for="option2">Não</label>
+                <label for="option2">Não <span id="count-Não">0</span></label>
             </div>
             <div class="vote-option">
                 <input type="radio" id="option3" name="material" value="Tenho e posso levar">
-                <label for="option3">Tenho e posso levar</label>
+                <label for="option3">Tenho e posso levar <span id="count-Tenho%20e%20posso%20levar">0</span></label>
             </div>
             <button id="vote-button">Votar</button>
-            <div>
-                <p><strong>Votos:</strong></p>
-                <p id="count-Tenho%20mas%20não%20posso%20levar">0</p>
-                <p id="count-Não">0</p>
-                <p id="count-Tenho%20e%20posso%20levar">0</p>
-            </div>
         </div>
 
         <div class="chat-section">
@@ -162,6 +159,10 @@
             // Atualiza o voto
             update(voteRef, (currentValue) => {
                 return (currentValue || 0) + 1;
+            }).then(() => {
+                // Atualiza a contagem na interface
+                const encodedOption = encodeURIComponent(option);
+                document.getElementById(`count-${encodedOption}`).textContent = (parseInt(document.getElementById(`count-${encodedOption}`).textContent) + 1);
             }).catch(error => {
                 console.error("Erro ao atualizar o voto:", error);
             });
