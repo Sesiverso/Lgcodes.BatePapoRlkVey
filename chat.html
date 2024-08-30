@@ -18,7 +18,7 @@
         #chat-container {
             display: flex;
             flex-direction: column;
-            width: 300px;
+            width: 400px;
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -30,6 +30,7 @@
             padding: 10px;
             overflow-y: auto;
             border-bottom: 1px solid #ccc;
+            max-height: 300px;
         }
 
         #input-container {
@@ -38,7 +39,11 @@
             background-color: #fafafa;
         }
 
-        #input-container input[type="text"] {
+        #file-upload {
+            display: none;
+        }
+
+        #message-input {
             flex: 1;
             padding: 5px;
             border: 1px solid #ccc;
@@ -46,58 +51,58 @@
             margin-right: 5px;
         }
 
-        #input-container button {
+        #upload-button, #send-button {
             padding: 5px 10px;
-            background-color: #007bff;
             border: none;
             color: white;
             border-radius: 4px;
             cursor: pointer;
         }
 
-        #input-container button#upload-button {
+        #upload-button {
             background-color: #28a745;
             margin-right: 5px;
+        }
+
+        #send-button {
+            background-color: #007bff;
         }
 
         .message {
             display: flex;
             margin-bottom: 10px;
+            align-items: center;
         }
 
-        .message .profile-pic {
+        .message img {
             width: 40px;
             height: 40px;
             border-radius: 50%;
             margin-right: 10px;
         }
 
-        .message .message-content {
-            display: flex;
-            flex-direction: column;
+        .message-content {
+            max-width: 300px;
         }
 
-        .message .user-name {
-            font-weight: bold;
+        .message-content img {
+            max-width: 200px;
+            border-radius: 8px;
+        }
+
+        .message-content strong {
+            display: block;
             margin-bottom: 5px;
-        }
-
-        .uploaded-image {
-            max-width: 200px;
-            border-radius: 8px;
-        }
-
-        .uploaded-video {
-            max-width: 200px;
-            border-radius: 8px;
         }
     </style>
 </head>
 <body>
     <div id="chat-container">
-        <div id="messages-container"></div>
+        <div id="messages-container">
+            <!-- Mensagens serão exibidas aqui -->
+        </div>
         <div id="input-container">
-            <input type="file" id="file-upload" style="display: none;">
+            <input type="file" id="file-upload">
             <input type="text" id="message-input" placeholder="Insira sua mensagem aqui...">
             <button id="upload-button">+</button>
             <button id="send-button">Enviar</button>
@@ -111,7 +116,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
 
     <script>
-        // Configuração do Firebase
         const firebaseConfig = {
             apiKey: "sua-api-key",
             authDomain: "seu-auth-domain",
@@ -122,7 +126,6 @@
             measurementId: "seu-measurement-id"
         };
 
-        // Inicializar Firebase
         const app = firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const storage = firebase.storage();
@@ -132,6 +135,37 @@
         const messageInput = document.getElementById('message-input');
         const uploadButton = document.getElementById('upload-button');
         const sendButton = document.getElementById('send-button');
+
+        function displayMessage(userName, userProfilePic, content, isImage) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+
+            const img = document.createElement('img');
+            img.src = userProfilePic;
+            img.alt = 'Profile Picture';
+
+            const messageContent = document.createElement('div');
+            messageContent.classList.add('message-content');
+
+            const nameElement = document.createElement('strong');
+            nameElement.textContent = userName;
+
+            if (isImage) {
+                const imageElement = document.createElement('img');
+                imageElement.src = content;
+                messageContent.appendChild(imageElement);
+            } else {
+                const textElement = document.createElement('span');
+                textElement.textContent = content;
+                messageContent.appendChild(textElement);
+            }
+
+            messageContent.prepend(nameElement);
+            messageElement.appendChild(img);
+            messageElement.appendChild(messageContent);
+            messagesContainer.appendChild(messageElement);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
 
         uploadButton.addEventListener('click', () => {
             fileUpload.click();
@@ -146,9 +180,8 @@
                         db.collection('messages').add({
                             userName: localStorage.getItem('userName'),
                             userProfilePic: localStorage.getItem('userProfilePic'),
-                            messageType: 'file',
-                            fileUrl: url,
-                            fileType: file.type,
+                            content: url,
+                            isImage: true,
                             timestamp: firebase.firestore.FieldValue.serverTimestamp()
                         });
                     });
@@ -157,13 +190,13 @@
         });
 
         sendButton.addEventListener('click', () => {
-            const message = messageInput.value.trim();
-            if (message) {
+            const messageText = messageInput.value;
+            if (messageText.trim() !== '') {
                 db.collection('messages').add({
                     userName: localStorage.getItem('userName'),
                     userProfilePic: localStorage.getItem('userProfilePic'),
-                    messageType: 'text',
-                    text: message,
+                    content: messageText,
+                    isImage: false,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 messageInput.value = '';
@@ -174,43 +207,7 @@
             messagesContainer.innerHTML = '';
             snapshot.forEach(doc => {
                 const data = doc.data();
-                const messageElement = document.createElement('div');
-                messageElement.classList.add('message');
-
-                const profileImg = document.createElement('img');
-                profileImg.src = data.userProfilePic;
-                profileImg.classList.add('profile-pic');
-
-                const messageContent = document.createElement('div');
-                messageContent.classList.add('message-content');
-
-                const userName = document.createElement('span');
-                userName.classList.add('user-name');
-                userName.textContent = data.userName;
-
-                const content = document.createElement('div');
-                if (data.messageType === 'text') {
-                    content.textContent = data.text;
-                } else if (data.messageType === 'file') {
-                    if (data.fileType.startsWith('image/')) {
-                        const img = document.createElement('img');
-                        img.src = data.fileUrl;
-                        img.classList.add('uploaded-image');
-                        content.appendChild(img);
-                    } else if (data.fileType.startsWith('video/')) {
-                        const video = document.createElement('video');
-                        video.src = data.fileUrl;
-                        video.controls = true;
-                        video.classList.add('uploaded-video');
-                        content.appendChild(video);
-                    }
-                }
-
-                messageContent.appendChild(userName);
-                messageContent.appendChild(content);
-                messageElement.appendChild(profileImg);
-                messageElement.appendChild(messageContent);
-                messagesContainer.appendChild(messageElement);
+                displayMessage(data.userName, data.userProfilePic, data.content, data.isImage);
             });
         });
     </script>
