@@ -1,155 +1,99 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat</title>
     <style>
+        /* Estilos básicos para o chat */
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
             display: flex;
             flex-direction: column;
             height: 100vh;
-            background-color: #f7f7f7;
+            margin: 0;
         }
         .chat-container {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            padding: 10px;
             border-bottom: 1px solid #ccc;
         }
-        .chat-message {
-            margin-bottom: 10px;
+        .message {
             display: flex;
             align-items: center;
+            margin-bottom: 10px;
         }
-        .chat-message img {
+        .message img {
             width: 40px;
             height: 40px;
             border-radius: 50%;
             margin-right: 10px;
         }
-        .chat-message .message-content {
-            background-color: #007BFF;
-            color: white;
-            padding: 10px;
-            border-radius: 8px;
+        .message span {
+            background: #f1f1f1;
+            padding: 5px 10px;
+            border-radius: 10px;
         }
         .input-container {
             display: flex;
-            align-items: center;
             padding: 10px;
-            background-color: #fff;
-            border-top: 1px solid #ccc;
         }
-        .input-container input[type="text"] {
+        .input-container input {
             flex: 1;
             padding: 10px;
-            border-radius: 8px;
             border: 1px solid #ccc;
-            margin-right: 10px;
+            border-radius: 20px;
         }
         .input-container button {
-            padding: 10px 15px;
-            border-radius: 8px;
+            margin-left: 10px;
+            padding: 10px;
             border: none;
-            cursor: pointer;
-            background-color: #007BFF;
+            background-color: #007bff;
             color: white;
-            margin-right: 10px;
-        }
-        .input-container button:hover {
-            background-color: #0056b3;
-        }
-        .input-container input[type="file"] {
-            display: none;
+            border-radius: 20px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div class="chat-container" id="chat-container">
-        <!-- Mensagens serão exibidas aqui -->
+    <div class="chat-container" id="chatContainer">
+        <!-- As mensagens aparecerão aqui -->
     </div>
-
     <div class="input-container">
-        <input type="text" id="message-input" placeholder="Insira sua mensagem aqui...">
-        <button id="send-button">Enviar</button>
-        <label for="file-input" style="cursor: pointer;">
-            <button id="file-button">Arquivo</button>
-        </label>
-        <input type="file" id="file-input">
-        <button id="call-button">Call</button>
+        <input type="text" id="messageInput" placeholder="Insira sua mensagem aqui">
+        <button onclick="sendMessage()">Enviar</button>
     </div>
 
     <script>
-        // Função para carregar as mensagens armazenadas
-        function loadMessages() {
-            const messages = JSON.parse(localStorage.getItem('messages')) || [];
-            const chatContainer = document.getElementById('chat-container');
-            chatContainer.innerHTML = '';
-            messages.forEach(({ name, img, message }) => {
-                const messageElement = document.createElement('div');
-                messageElement.className = 'chat-message';
-                messageElement.innerHTML = `
-                    <img src="${img}" alt="Profile Image">
-                    <div class="message-content">
-                        <strong>${name}: </strong>${message}
-                    </div>
-                `;
-                chatContainer.appendChild(messageElement);
-            });
+        // Obter nome de usuário e foto de perfil do localStorage
+        const username = localStorage.getItem('username');
+        const profileImage = localStorage.getItem('profileImage');
+
+        if (!username || !profileImage) {
+            // Se o usuário não definiu o perfil, redirecionar para a página de configuração
+            window.location.href = 'index.html';
+        }
+
+        function renderMessage(user, img, message) {
+            const chatContainer = document.getElementById('chatContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.innerHTML = `<img src="${img}" alt="User Image"><span><strong>${user}: </strong>${message}</span>`;
+            chatContainer.appendChild(messageDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        // Função para salvar uma nova mensagem
-        function saveMessage(name, img, message) {
-            const messages = JSON.parse(localStorage.getItem('messages')) || [];
-            messages.push({ name, img, message });
-            localStorage.setItem('messages', JSON.stringify(messages));
-            loadMessages();
-        }
-
-        // Carregar mensagens ao iniciar
-        loadMessages();
-
-        // Obter o nome e a imagem do usuário do localStorage
-        const name = localStorage.getItem('name');
-        const img = localStorage.getItem('img');
-
-        // Verifica se o nome e a imagem estão disponíveis
-        if (!name || !img) {
-            alert('Por favor, defina seu nome e foto de perfil na página de configurações.');
-            window.location.href = 'index.html'; // Redireciona de volta para a página de configuração
-        }
-
-        // Evento de clique para enviar uma mensagem
-        document.getElementById('send-button').addEventListener('click', () => {
-            const messageInput = document.getElementById('message-input');
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
             const message = messageInput.value.trim();
             if (message) {
-                saveMessage(name, img, message);
+                // Renderizar a mensagem no chat
+                renderMessage(username, profileImage, message);
                 messageInput.value = '';
+                // Aqui você pode adicionar a lógica para enviar a mensagem para um servidor e compartilhá-la com outros usuários
             }
-        });
-
-        // Evento de envio de arquivo
-        document.getElementById('file-input').addEventListener('change', function() {
-            const file = this.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    saveMessage(name, img, `<a href="${e.target.result}" download>${file.name}</a>`);
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-
-        // Evento de clique para iniciar uma chamada
-        document.getElementById('call-button').addEventListener('click', () => {
-            window.open('calls.html', '_blank');
-        });
+        }
     </script>
 </body>
 </html>
