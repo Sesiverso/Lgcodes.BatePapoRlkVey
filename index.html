@@ -43,6 +43,36 @@
             <p id="preview-name"></p>
         </div>
     </div>
-    <script src="script.js"></script>
+    <script>
+        // Script para seleção de perfil
+        const profileForm = document.getElementById('profile-form');
+        const profileNameInput = document.getElementById('profile-name');
+        const profilePreview = document.getElementById('profile-preview');
+        const previewImage = document.getElementById('preview-image');
+        const previewName = document.getElementById('preview-name');
+        const submitProfile = document.getElementById('submit-profile');
+        let selectedImageUrl = '';
+
+        document.querySelectorAll('.profile-image-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.profile-image-button').forEach(btn => btn.classList.remove('selected'));
+                button.classList.add('selected');
+                selectedImageUrl = button.getAttribute('data-image-url');
+                previewImage.src = selectedImageUrl;
+                previewName.textContent = profileNameInput.value || 'Nome';
+                profilePreview.style.display = 'block';
+            });
+        });
+
+        profileForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = profileNameInput.value;
+            if (name && selectedImageUrl) {
+                localStorage.setItem('profileName', name);
+                localStorage.setItem('profileImage', selectedImageUrl);
+                window.location.href = 'chat.html';
+            }
+        });
+    </script>
 </body>
 </html>
