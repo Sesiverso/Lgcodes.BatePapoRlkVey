@@ -3,44 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuração Inicial</title>
+    <title>Seleção de Perfil</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background: #f0f0f0;
-            margin: 0;
+            background-color: #f0f0f0;
         }
         .container {
             text-align: center;
-        }
-        .image-option {
-            display: inline-block;
-            margin: 10px;
-            border: 2px solid #ddd;
+            background-color: #ffffff;
+            padding: 20px;
             border-radius: 8px;
-            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        .image-option img {
-            width: 100px;
-            height: 100px;
-            border-radius: 8px;
+        .profile-selection, .name-selection {
+            margin-bottom: 15px;
         }
-        .selected {
-            border-color: #007bff;
+        input[type="file"], input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
         }
         button {
+            padding: 10px 20px;
             background-color: #007bff;
             color: #fff;
             border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
+            border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
-            margin-top: 20px;
         }
         button:hover {
             background-color: #0056b3;
@@ -49,53 +48,78 @@
 </head>
 <body>
     <div class="container">
-        <h1>Escolha seu nome e foto</h1>
-        <div>
-            <label for="username">Digite seu nome:</label>
-            <input type="text" id="username" placeholder="Seu nome">
-        </div>
-        <div>
-            <p>Escolha uma foto:</p>
-            <div class="image-options">
-                <div class="image-option" data-image="https://www.diariodepernambuco.com.br/static/app/noticia_127983242361/2024/05/16/952809/20240516183727142193o.jpg">
-                    <img src="https://www.diariodepernambuco.com.br/static/app/noticia_127983242361/2024/05/16/952809/20240516183727142193o.jpg" alt="Foto 1">
-                </div>
-                <div class="image-option" data-image="https://preview.redd.it/what-is-your-favorite-sonic-meme-v0-t1pv65foxajb1.png?auto=webp&s=cc05c260c19666d0cb4feeb40298d37fad5066c5">
-                    <img src="https://preview.redd.it/what-is-your-favorite-sonic-meme-v0-t1pv65foxajb1.png?auto=webp&s=cc05c260c19666d0cb4feeb40298d37fad5066c5" alt="Foto 2">
-                </div>
-                <div class="image-option" data-image="https://preview.redd.it/recreating-the-you-have-alerted-the-sonic-meme-v0-ivping97ll2a1.png?auto=webp&s=ca4d75183fbfe04464e31a7e6603bbda171b343c">
-                    <img src="https://preview.redd.it/recreating-the-you-have-alerted-the-sonic-meme-v0-ivping97ll2a1.png?auto=webp&s=ca4d75183fbfe04464e31a7e6603bbda171b343c" alt="Foto 3">
-                </div>
-                <div class="image-option" data-image="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9CKPkXd8vEKt-eSTnaYXRdXwAVsADQ95YrmYQ1Fr9n7kgtNJ">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9CKPkXd8vEKt-eSTnaYXRdXwAVsADQ95YrmYQ1Fr9n7kgtNJ" alt="Foto 4">
-                </div>
+        <h1>Selecione seu Perfil</h1>
+        <form id="profileForm">
+            <div class="profile-selection">
+                <label for="profilePic">Escolha sua foto de perfil:</label>
+                <input type="file" id="profilePic" accept="image/*" required>
             </div>
-            <button id="start-chat">Iniciar Chat</button>
-        </div>
+            <div class="name-selection">
+                <label for="userName">Escolha seu nome:</label>
+                <input type="text" id="userName" placeholder="Digite seu nome" required>
+            </div>
+            <button type="submit">Entrar no Chat</button>
+        </form>
     </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const imageOptions = document.querySelectorAll('.image-option');
-            let selectedImage = '';
+        // Importando funções do Firebase
+        import { initializeApp } from "firebase/app";
+        import { getAuth, createUserWithEmailAndPassword, signOut } from "firebase/auth";
+        import { getFirestore, doc, setDoc } from "firebase/firestore";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-            imageOptions.forEach(option => {
-                option.addEventListener('click', () => {
-                    imageOptions.forEach(imgOption => imgOption.classList.remove('selected'));
-                    option.classList.add('selected');
-                    selectedImage = option.getAttribute('data-image');
-                });
-            });
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCuYhMag13uhVsYGo6KFkGFF5COH9fMWGI",
+            authDomain: "votacao-8176a.firebaseapp.com",
+            projectId: "votacao-8176a",
+            storageBucket: "votacao-8176a.appspot.com",
+            messagingSenderId: "444026858821",
+            appId: "1:444026858821:web:a59af301c2fb43eeac222c",
+            measurementId: "G-BEQ9LWFRCS"
+        };
 
-            document.getElementById('start-chat').addEventListener('click', () => {
-                const username = document.getElementById('username').value.trim();
-                if (username && selectedImage) {
-                    localStorage.setItem('username', username);
-                    localStorage.setItem('userImage', selectedImage);
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        const profileForm = document.getElementById('profileForm');
+        const profilePicInput = document.getElementById('profilePic');
+        const userNameInput = document.getElementById('userName');
+
+        profileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const file = profilePicInput.files[0];
+            const name = userNameInput.value;
+
+            if (file && name) {
+                const storageRef = ref(storage, `profile_pics/${file.name}`);
+                await uploadBytes(storageRef, file);
+                const downloadURL = await getDownloadURL(storageRef);
+
+                // Criar um novo usuário
+                const email = `${name}@example.com`;
+                const password = 'password'; // Senha temporária
+                try {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                    const user = auth.currentUser;
+                    await setDoc(doc(db, 'users', user.uid), {
+                        name: name,
+                        profilePic: downloadURL
+                    });
                     window.location.href = 'chat.html';
-                } else {
-                    alert('Por favor, preencha seu nome e escolha uma foto.');
+                } catch (error) {
+                    console.error('Erro ao criar usuário:', error);
                 }
-            });
+            }
         });
     </script>
 </body>
