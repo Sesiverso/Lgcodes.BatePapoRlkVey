@@ -3,38 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Votação e Bate-Papo sobre Pelúcias</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Votação e Bate-Papo</title>
+    <!-- Adiciona o CSS para estilização -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f0f0f0;
+            color: #333;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .vote-section, .chat-section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .vote-option {
+            margin-bottom: 10px;
+        }
+        .chat-box {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            background: #fff;
+        }
+        .chat-box div {
+            margin-bottom: 10px;
+        }
+        input[type="radio"] {
+            margin-right: 10px;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
-    <h1>Votação e Bate-Papo sobre Pelúcias</h1>
-    
-    <div id="voting">
-        <h2>Você tem algum macaco de pelúcia?</h2>
-        <form id="vote-form">
-            <input type="radio" id="option1" name="material" value="Tenho mas não posso levar">
-            <label for="option1">Tenho mas não posso levar</label><br>
-            <input type="radio" id="option2" name="material" value="Não">
-            <label for="option2">Não</label><br>
-            <input type="radio" id="option3" name="material" value="Tenho e posso levar">
-            <label for="option3">Tenho e posso levar</label><br><br>
-            <button type="button" onclick="submitVote()">Votar</button>
-        </form>
-        <h3>Resultados:</h3>
-        <ul id="results">
-            <li>Tenho mas não posso levar: <span id="count-opcao1">0</span> votos</li>
-            <li>Não: <span id="count-opcao2">0</span> votos</li>
-            <li>Tenho e posso levar: <span id="count-opcao3">0</span> votos</li>
-        </ul>
-    </div>
-    
-    <div id="chat">
-        <h2>Bate-Papo</h2>
-        <div id="messages"></div>
-        <input type="text" id="message-input" placeholder="Digite sua mensagem...">
-        <button onclick="sendMessage()">Enviar</button>
+    <div class="container">
+        <div class="vote-section">
+            <h2>Votação</h2>
+            <p>Você tem algum macaco de pelúcia?</p>
+            <div class="vote-option">
+                <input type="radio" id="option1" name="material" value="Tenho mas não posso levar">
+                <label for="option1">Tenho mas não posso levar</label>
+            </div>
+            <div class="vote-option">
+                <input type="radio" id="option2" name="material" value="Não">
+                <label for="option2">Não</label>
+            </div>
+            <div class="vote-option">
+                <input type="radio" id="option3" name="material" value="Tenho e posso levar">
+                <label for="option3">Tenho e posso levar</label>
+            </div>
+            <button onclick="submitVote()">Votar</button>
+            <div>
+                <p><strong>Votos:</strong></p>
+                <p id="count-Tenho mas não posso levar">0</p>
+                <p id="count-Não">0</p>
+                <p id="count-Tenho e posso levar">0</p>
+            </div>
+        </div>
+
+        <div class="chat-section">
+            <h2>Chat</h2>
+            <div id="messages" class="chat-box"></div>
+            <input type="text" id="message-input" placeholder="Digite sua mensagem...">
+            <button onclick="sendMessage()">Enviar</button>
+        </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Adiciona o script com módulos ES6 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+        import { getDatabase, ref, onValue, set, push, update } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAfVXG-xIe4FyPpsNTtmV__HutzOQFgaVQ",
+            authDomain: "votacao-da4e2.firebaseapp.com",
+            projectId: "votacao-da4e2",
+            storageBucket: "votacao-da4e2.appspot.com",
+            messagingSenderId: "696185234268",
+            appId: "1:696185234268:web:37e1ddd097dfeea95a9799",
+            measurementId: "G-PY9XXN0ESV"
+        };
+
+        // Inicializa o Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Inicializa votos se não existirem
+        const initializeVotes = () => {
+            const options = ['Tenho mas não posso levar', 'Não', 'Tenho e posso levar'];
+            options.forEach(option => {
+                const voteRef = ref(database, `votes/${option}`);
+                onValue(voteRef, snapshot => {
+                    if (snapshot.val() === null) {
+                        set(voteRef, 0);
+                    }
+                });
+            });
+        };
+
+        // Carrega e exibe os votos
+        const loadVotes = () => {
+            const options = ['Tenho mas não posso levar', 'Não', 'Tenho e posso levar'];
+            options.forEach(option => {
+                const voteRef = ref(database, `votes/${option}`);
+                onValue(voteRef, snapshot => {
+                    const count = snapshot.val() || 0;
+                    document.getElementById(`count-${option}`).textContent = count;
+                });
+            });
+        };
+
+        // Envia um voto
+        const submitVote = () => {
+            const selectedOption = document.querySelector('input[name="material"]:checked');
+            if (!selectedOption) {
+                alert('Selecione uma opção para votar.');
+                return;
+            }
+
+            const option = selectedOption.value;
+            const voteRef = ref(database, `votes/${option}`);
+            update(voteRef, (currentValue) => (currentValue || 0) + 1);
+
+            localStorage.setItem('voted', 'true');
+        };
+
+        // Envia uma mensagem no chat
+        const sendMessage = () => {
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value.trim();
+
+            if (message === '') return;
+
+            const messageObject = {
+                message: message,
+                timestamp: new Date().toISOString()
+            };
+
+            const messagesRef = ref(database, 'messages');
+            push(messagesRef, messageObject);
+            messageInput.value = '';
+        };
+
+        // Exibe mensagens no chat
+        const displayMessages = () => {
+            const messagesRef = ref(database, 'messages');
+            onValue(messagesRef, snapshot => {
+                const messagesDiv = document.getElementById('messages');
+                messagesDiv.innerHTML = '';
+                snapshot.forEach(childSnapshot => {
+                    const message = childSnapshot.val().message;
+                    const messageElement = document.createElement('div');
+                    messageElement.textContent = message;
+                    messagesDiv.appendChild(messageElement);
+                });
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            });
+        };
+
+        // Carrega votos e mensagens ao carregar a página
+        window.onload = () => {
+            initializeVotes();
+            loadVotes();
+            displayMessages();
+        };
+    </script>
 </body>
 </html>
