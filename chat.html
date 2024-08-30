@@ -110,27 +110,19 @@
         const sendButton = document.getElementById('send-button');
         const callButton = document.getElementById('call-button');
 
-        let user = null;
-
-        // Monitorar estado de autenticação
-        onAuthStateChanged(auth, (currentUser) => {
-            if (currentUser) {
-                user = currentUser;
-                // Assumindo que o usuário tem um displayName e photoURL
-            } else {
-                window.location.href = 'index.html'; // Redirecionar para a página de login
-            }
-        });
+        // Obter dados do perfil do localStorage
+        const userName = localStorage.getItem('userName');
+        const userPic = localStorage.getItem('userPic');
 
         // Adicionar mensagem ao Firestore
         sendButton.addEventListener('click', async () => {
             const message = messageInput.value;
-            if (message.trim() !== '' && user) {
+            if (message.trim() !== '') {
                 try {
                     await addDoc(collection(db, 'messages'), {
                         text: message,
-                        userName: user.displayName,
-                        userPhoto: user.photoURL,
+                        userName: userName || 'Desconhecido',
+                        userPhoto: userPic || 'https://www.example.com/default-profile-pic.jpg',
                         timestamp: new Date()
                     });
                     messageInput.value = '';
@@ -145,22 +137,25 @@
             chatContainer.innerHTML = '';
             snapshot.forEach((doc) => {
                 const data = doc.data();
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message';
-                messageDiv.innerHTML = `
-                    <img src="${data.userPhoto || 'https://www.example.com/default-profile-pic.jpg'}" alt="Foto de perfil">
-                    <div class="text">${data.text}</div>
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message');
+                messageElement.innerHTML = `
+                    <img src="${data.userPhoto}" alt="Foto de perfil">
+                    <div class="text">
+                        <strong>${data.userName}</strong>: ${data.text}
+                    </div>
                 `;
-                chatContainer.appendChild(messageDiv);
+                chatContainer.appendChild(messageElement);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
             });
-            chatContainer.scrollTop = chatContainer.scrollHeight;
         });
 
-        // Botão de chamada
+        // Iniciar chamada
         callButton.addEventListener('click', () => {
-            window.open('calls.html?caller=true', '_blank');
+            window.open('calls.html', '_blank');
         });
     </script>
 </body>
 </html>
+
 
