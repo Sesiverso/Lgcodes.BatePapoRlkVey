@@ -1,47 +1,51 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuração Inicial</title>
+    <title>Configurações de Perfil</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background: #f0f0f0;
-            margin: 0;
+            background-color: #f0f0f0;
         }
         .container {
+            max-width: 500px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
-        .image-option {
-            display: inline-block;
-            margin: 10px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        .image-option img {
+        .profile-pic {
             width: 100px;
             height: 100px;
-            border-radius: 8px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+            object-fit: cover;
         }
-        .selected {
-            border-color: #007bff;
+        input {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            width: calc(100% - 22px);
         }
         button {
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            padding: 10px 15px;
+            padding: 10px 20px;
             border-radius: 5px;
+            border: none;
+            background-color: #007BFF;
+            color: #fff;
             cursor: pointer;
-            font-size: 16px;
-            margin-top: 20px;
+            margin: 10px;
         }
         button:hover {
             background-color: #0056b3;
@@ -50,67 +54,48 @@
 </head>
 <body>
     <div class="container">
-        <h1>Escolha seu nome e foto</h1>
-        <div>
-            <label for="username">Digite seu nome:</label>
-            <input type="text" id="username" placeholder="Seu nome">
-        </div>
-        <div>
-            <p>Escolha uma foto:</p>
-            <div class="image-options">
-                <div class="image-option" data-image="https://www.diariodepernambuco.com.br/static/app/noticia_127983242361/2024/05/16/952809/20240516183727142193o.jpg">
-                    <img src="https://www.diariodepernambuco.com.br/static/app/noticia_127983242361/2024/05/16/952809/20240516183727142193o.jpg" alt="Foto 1">
-                </div>
-                <div class="image-option" data-image="https://preview.redd.it/what-is-your-favorite-sonic-meme-v0-t1pv65foxajb1.png?auto=webp&s=cc05c260c19666d0cb4feeb40298d37fad5066c5">
-                    <img src="https://preview.redd.it/what-is-your-favorite-sonic-meme-v0-t1pv65foxajb1.png?auto=webp&s=cc05c260c19666d0cb4feeb40298d37fad5066c5" alt="Foto 2">
-                </div>
-                <div class="image-option" data-image="https://preview.redd.it/recreating-the-you-have-alerted-the-sonic-meme-v0-ivping97ll2a1.png?auto=webp&s=ca4d75183fbfe04464e31a7e6603bbda171b343c">
-                    <img src="https://preview.redd.it/recreating-the-you-have-alerted-the-sonic-meme-v0-ivping97ll2a1.png?auto=webp&s=ca4d75183fbfe04464e31a7e6603bbda171b343c" alt="Foto 3">
-                </div>
-                <div class="image-option" data-image="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9CKPkXd8vEKt-eSTnaYXRdXh6xh_8ciGoPQ&s">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9CKPkXd8vEKt-eSTnaYXRdXh6xh_8ciGoPQ&s" alt="Foto 4">
-                </div>
-                <div class="image-option" data-image="https://imagenes.elpais.com/resizer/v2/GLK77QHJ4JAY3KAFM5FV6YV5OM.webp?auth=09c184fe292b2932d6e90d1e57fd1dc21e111cc2044559c1cc5f7e5e04ae249d&width=414">
-                    <img src="https://imagenes.elpais.com/resizer/v2/GLK77QHJ4JAY3KAFM5FV6YV5OM.webp?auth=09c184fe292b2932d6e90d1e57fd1dc21e111cc2044559c1cc5f7e5e04ae249d&width=414" alt="Foto 5">
-                </div>
-                <div class="image-option" data-image="https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/WZEUY7Q6GMI6ZPVIGCHKCNCZJ4.jpg">
-                    <img src="https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/WZEUY7Q6GMI6ZPVIGCHKCNCZJ4.jpg" alt="Foto 6">
-                </div>
-            </div>
-        </div>
-        <button id="confirm-button">Confirmar</button>
-
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                let selectedImageUrl = '';
-
-                // Seleção da foto
-                document.querySelectorAll('.image-option').forEach(option => {
-                    option.addEventListener('click', () => {
-                        document.querySelectorAll('.image-option').forEach(el => el.classList.remove('selected'));
-                        option.classList.add('selected');
-                        selectedImageUrl = option.getAttribute('data-image');
-                    });
-                });
-
-                // Confirmação do nome e imagem
-                document.getElementById('confirm-button').addEventListener('click', () => {
-                    const username = document.getElementById('username').value.trim();
-                    
-                    if (username === '' || !selectedImageUrl) {
-                        alert('Por favor, insira seu nome e selecione uma foto.');
-                        return;
-                    }
-
-                    // Armazena os dados no localStorage
-                    localStorage.setItem('username', username);
-                    localStorage.setItem('userImage', selectedImageUrl);
-
-                    // Redireciona para a página principal
-                    window.location.href = 'chat.html';
-                });
-            });
-        </script>
+        <h1>Configuração de Perfil</h1>
+        <img id="profile-preview" class="profile-pic" src="https://www.example.com/default-profile-pic.jpg" alt="Imagem de perfil">
+        <input type="text" id="name-input" placeholder="Insira seu nome aqui">
+        <input type="text" id="profile-pic-url" placeholder="URL da imagem de perfil">
+        <button id="save-button">Salvar</button>
     </div>
+
+    <script>
+        const nameInput = document.getElementById('name-input');
+        const profilePicUrl = document.getElementById('profile-pic-url');
+        const profilePreview = document.getElementById('profile-preview');
+        const saveButton = document.getElementById('save-button');
+
+        // Carregar dados existentes
+        const storedName = localStorage.getItem('userName');
+        const storedPic = localStorage.getItem('userPic');
+        
+        if (storedName) {
+            nameInput.value = storedName;
+        }
+        if (storedPic) {
+            profilePreview.src = storedPic;
+        }
+
+        // Atualizar pré-visualização da imagem
+        profilePicUrl.addEventListener('input', (e) => {
+            profilePreview.src = e.target.value;
+        });
+
+        // Salvar dados
+        saveButton.addEventListener('click', () => {
+            const userName = nameInput.value;
+            const userPic = profilePicUrl.value;
+            
+            if (userName && userPic) {
+                localStorage.setItem('userName', userName);
+                localStorage.setItem('userPic', userPic);
+                window.location.href = 'chat.html';
+            } else {
+                alert('Por favor, insira um nome e uma URL de imagem de perfil.');
+            }
+        });
+    </script>
 </body>
 </html>
