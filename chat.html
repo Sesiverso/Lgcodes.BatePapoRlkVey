@@ -36,11 +36,17 @@
             display: flex;
             align-items: center;
         }
-        .chat-box img {
+        .chat-box img.profile-pic {
             border-radius: 50%;
             width: 40px;
             height: 40px;
             margin-right: 10px;
+        }
+        .chat-box img.sent-image {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 8px;
+            margin-left: 10px;
         }
         .chat-box a {
             color: #007bff;
@@ -90,7 +96,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getDatabase, ref, onValue, push, get, set, update } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+        import { getDatabase, ref, onValue, push } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
         // Configuração do Firebase
         const firebaseConfig = {
@@ -137,16 +143,19 @@
                     const img = document.createElement('img');
                     img.src = data.image;
                     img.alt = data.username;
-                    img.width = 40;
-                    img.height = 40;
+                    img.className = 'profile-pic';
 
                     const textElement = document.createElement('span');
+                    textElement.textContent = `${data.username}: ${data.message}`;
+
+                    messageElement.appendChild(img);
+                    messageElement.appendChild(textElement);
+
                     if (data.fileUrl) {
                         if (data.fileUrl.match(/\.(jpeg|jpg|gif|png)$/) != null) {
                             const fileImage = document.createElement('img');
                             fileImage.src = data.fileUrl;
-                            fileImage.style.maxWidth = '200px';
-                            fileImage.style.maxHeight = '200px';
+                            fileImage.className = 'sent-image';
                             messageElement.appendChild(fileImage);
                         } else {
                             const fileLink = document.createElement('a');
@@ -155,12 +164,8 @@
                             fileLink.target = '_blank';
                             messageElement.appendChild(fileLink);
                         }
-                    } else {
-                        textElement.textContent = `${data.username}: ${data.message}`;
-                        messageElement.appendChild(textElement);
                     }
 
-                    messageElement.prepend(img);
                     messagesDiv.appendChild(messageElement);
                 });
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
