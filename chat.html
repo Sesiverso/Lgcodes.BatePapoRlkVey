@@ -7,176 +7,149 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f7f7f7;
             margin: 0;
+            padding: 0;
             display: flex;
             flex-direction: column;
             height: 100vh;
+            background-color: #f7f7f7;
         }
-        #chat-container {
+        .chat-container {
             flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
             overflow-y: auto;
-            background-color: #fff;
-            border-bottom: 1px solid #ddd;
+            padding: 20px;
+            border-bottom: 1px solid #ccc;
         }
-        .message {
+        .chat-message {
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
-            margin-bottom: 10px;
         }
-        .message img {
+        .chat-message img {
             width: 40px;
             height: 40px;
             border-radius: 50%;
             margin-right: 10px;
         }
-        .message p {
-            margin: 0;
+        .chat-message .message-content {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
         }
-        #controls {
+        .input-container {
             display: flex;
             align-items: center;
             padding: 10px;
             background-color: #fff;
-            border-top: 1px solid #ddd;
+            border-top: 1px solid #ccc;
         }
-        #controls input[type="text"] {
+        .input-container input[type="text"] {
             flex: 1;
             padding: 10px;
             border-radius: 8px;
             border: 1px solid #ccc;
             margin-right: 10px;
         }
-        #controls button {
+        .input-container button {
             padding: 10px 15px;
             border-radius: 8px;
             border: none;
             cursor: pointer;
             background-color: #007BFF;
             color: white;
+            margin-right: 10px;
         }
-        #controls button:hover {
+        .input-container button:hover {
             background-color: #0056b3;
         }
-        #file-input {
+        .input-container input[type="file"] {
             display: none;
         }
     </style>
 </head>
 <body>
-    <div id="chat-container">
-        <!-- Mensagens serão inseridas aqui -->
-    </div>
-    <div id="controls">
-        <input type="text" id="message-input" placeholder="Insira sua mensagem aqui">
-        <button id="send-message">Enviar Mensagem</button>
-        <label for="file-input" style="cursor: pointer;">Enviar Arquivo</label>
-        <input type="file" id="file-input">
-        <button id="start-call">Iniciar Chamada</button>
+    <div class="chat-container" id="chat-container">
+        <!-- Mensagens serão exibidas aqui -->
     </div>
 
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js"></script>
+    <div class="input-container">
+        <input type="text" id="message-input" placeholder="Insira sua mensagem aqui...">
+        <button id="send-button">Enviar</button>
+        <label for="file-input" style="cursor: pointer;">
+            <button id="file-button">Arquivo</button>
+        </label>
+        <input type="file" id="file-input">
+        <button id="call-button">Call</button>
+    </div>
 
     <script>
-        // Configuração do Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyDcTM9uPHMF5jRNtQfog1fL1EhFef6AvD8",
-            authDomain: "calls-6220c.firebaseapp.com",
-            databaseURL: "https://calls-6220c-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "calls-6220c",
-            storageBucket: "calls-6220c.appspot.com",
-            messagingSenderId: "343752930832",
-            appId: "1:343752930832:web:77c750525d72f2dcbb3c95",
-            measurementId: "G-DHBGBERJEN"
-        };
-
-        // Inicialização do Firebase
-        firebase.initializeApp(firebaseConfig);
-
-        const database = firebase.database();
-        const storage = firebase.storage();
-        const auth = firebase.auth();
-
-        // Função para obter os dados do usuário
-        function getUserData() {
-            // Supondo que os dados do usuário são armazenados no localStorage
-            return {
-                name: localStorage.getItem('userName') || 'Nome do Usuário',
-                profilePicture: localStorage.getItem('userProfilePicture') || 'URL da Imagem de Perfil'
-            };
-        }
-
-        // Função para enviar uma mensagem
-        function sendMessage(text) {
-            const messagesRef = database.ref('messages');
-            messagesRef.push({
-                name: user.name,
-                profilePicture: user.profilePicture,
-                text: text,
-                timestamp: Date.now()
-            });
-        }
-
-        // Função para exibir mensagens
-        function displayMessages() {
-            const messagesRef = database.ref('messages');
-            messagesRef.on('child_added', (snapshot) => {
-                const message = snapshot.val();
+        // Função para carregar as mensagens armazenadas
+        function loadMessages() {
+            const messages = JSON.parse(localStorage.getItem('messages')) || [];
+            const chatContainer = document.getElementById('chat-container');
+            chatContainer.innerHTML = '';
+            messages.forEach(({ name, img, message }) => {
                 const messageElement = document.createElement('div');
-                messageElement.className = 'message';
+                messageElement.className = 'chat-message';
                 messageElement.innerHTML = `
-                    <img src="${message.profilePicture}" alt="${message.name}">
-                    <p><strong>${message.name}:</strong> ${message.text}</p>
+                    <img src="${img}" alt="Profile Image">
+                    <div class="message-content">
+                        <strong>${name}: </strong>${message}
+                    </div>
                 `;
-                document.getElementById('chat-container').appendChild(messageElement);
+                chatContainer.appendChild(messageElement);
             });
+            chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
-        // Função para inicializar a página
-        function initializePage() {
-            const user = getUserData();
-            displayMessages();
-
-            document.getElementById('send-message').addEventListener('click', () => {
-                const messageInput = document.getElementById('message-input');
-                const messageText = messageInput.value;
-                if (messageText.trim()) {
-                    sendMessage(messageText);
-                    messageInput.value = '';
-                }
-            });
-
-            document.getElementById('file-input').addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (file) {
-                    const storageRef = storage.ref(`files/${file.name}`);
-                    const uploadTask = storageRef.put(file);
-
-                    uploadTask.on('state_changed', (snapshot) => {
-                        // Progresso do upload
-                    }, (error) => {
-                        console.error('Erro ao fazer upload do arquivo:', error);
-                    }, () => {
-                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                            sendMessage(`Arquivo: <a href="${downloadURL}" target="_blank">${file.name}</a>`);
-                        });
-                    });
-                }
-            });
-
-            document.getElementById('start-call').addEventListener('click', () => {
-                window.location.href = 'calls.html'; // Redireciona para a página de chamadas
-            });
+        // Função para salvar uma nova mensagem
+        function saveMessage(name, img, message) {
+            const messages = JSON.parse(localStorage.getItem('messages')) || [];
+            messages.push({ name, img, message });
+            localStorage.setItem('messages', JSON.stringify(messages));
+            loadMessages();
         }
 
-        initializePage();
+        // Carregar mensagens ao iniciar
+        loadMessages();
+
+        // Obter o nome e a imagem do usuário do localStorage
+        const name = localStorage.getItem('name');
+        const img = localStorage.getItem('img');
+
+        // Verifica se o nome e a imagem estão disponíveis
+        if (!name || !img) {
+            console.error('Nome ou imagem de perfil não encontrados.');
+            // Apenas exibe um erro no console sem redirecionar o usuário
+        }
+
+        // Evento de clique para enviar uma mensagem
+        document.getElementById('send-button').addEventListener('click', () => {
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value.trim();
+            if (message) {
+                saveMessage(name, img, message);
+                messageInput.value = '';
+            }
+        });
+
+        // Evento de envio de arquivo
+        document.getElementById('file-input').addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    saveMessage(name, img, `<a href="${e.target.result}" download>${file.name}</a>`);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Evento de clique para iniciar uma chamada
+        document.getElementById('call-button').addEventListener('click', () => {
+            window.open('calls.html', '_blank');
+        });
     </script>
 </body>
 </html>
