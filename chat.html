@@ -85,29 +85,82 @@
         <button id="call-button">Iniciar Chamada</button>
     </div>
 
-    <script>
-        // Adicione o código necessário para interagir com o chat e enviar mensagens
-        document.getElementById('send-button').addEventListener('click', () => {
-            const messageInput = document.getElementById('message-input');
-            const chatContainer = document.getElementById('chat-container');
-            const message = messageInput.value;
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js';
+        import { getFirestore, collection, addDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js';
 
-            if (message.trim() !== '') {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message';
-                messageDiv.innerHTML = `
-                    <img src="https://www.example.com/default-profile-pic.jpg" alt="Foto de perfil">
-                    <div class="text">${message}</div>
-                `;
-                chatContainer.appendChild(messageDiv);
-                messageInput.value = '';
-                chatContainer.scrollTop = chatContainer.scrollHeight;
+        // Sua configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCuYhMag13uhVsYGo6KFkGFF5COH9fMWGI",
+            authDomain: "votacao-8176a.firebaseapp.com",
+            projectId: "votacao-8176a",
+            storageBucket: "votacao-8176a.appspot.com",
+            messagingSenderId: "444026858821",
+            appId: "1:444026858821:web:a59af301c2fb43eeac222c",
+            measurementId: "G-BEQ9LWFRCS"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const chatContainer = document.getElementById('chat-container');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const callButton = document.getElementById('call-button');
+
+        let user = null;
+
+        // Monitorar estado de autenticação
+        onAuthStateChanged(auth, (currentUser) => {
+            if (currentUser) {
+                user = currentUser;
+                // Assumindo que o usuário tem um displayName e photoURL
+            } else {
+                window.location.href = 'index.html'; // Redirecionar para a página de login
             }
         });
 
-        document.getElementById('call-button').addEventListener('click', () => {
-            window.open('calls.html', '_blank');
+        // Adicionar mensagem ao Firestore
+        sendButton.addEventListener('click', async () => {
+            const message = messageInput.value;
+            if (message.trim() !== '' && user) {
+                try {
+                    await addDoc(collection(db, 'messages'), {
+                        text: message,
+                        userName: user.displayName,
+                        userPhoto: user.photoURL,
+                        timestamp: new Date()
+                    });
+                    messageInput.value = '';
+                } catch (e) {
+                    console.error("Erro ao enviar mensagem: ", e);
+                }
+            }
+        });
+
+        // Atualizar chat com mensagens do Firestore
+        onSnapshot(collection(db, 'messages'), (snapshot) => {
+            chatContainer.innerHTML = '';
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message';
+                messageDiv.innerHTML = `
+                    <img src="${data.userPhoto || 'https://www.example.com/default-profile-pic.jpg'}" alt="Foto de perfil">
+                    <div class="text">${data.text}</div>
+                `;
+                chatContainer.appendChild(messageDiv);
+            });
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        });
+
+        // Botão de chamada
+        callButton.addEventListener('click', () => {
+            window.open('calls.html?caller=true', '_blank');
         });
     </script>
 </body>
 </html>
+
