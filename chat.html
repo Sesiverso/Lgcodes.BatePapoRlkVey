@@ -41,67 +41,56 @@
             border-radius: 5px;
             max-width: 80%;
         }
-        .message .name {
-            font-weight: bold;
-            margin-right: 5px;
-        }
-        .message .timestamp {
-            font-size: 0.8em;
-            color: #888;
-        }
         .input-container {
             display: flex;
             padding: 10px;
             background: #fff;
             border-top: 1px solid #ddd;
         }
+        .input-container input, .input-container button {
+            margin-right: 10px;
+        }
         .input-container input {
             flex: 1;
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #ddd;
-            margin-right: 10px;
         }
         .input-container button {
-            padding: 10px;
+            padding: 10px 20px;
             border-radius: 5px;
             border: none;
-            background-color: #007BFF;
+            background: #007BFF;
             color: #fff;
             cursor: pointer;
         }
         .input-container button:hover {
-            background-color: #0056b3;
+            background: #0056b3;
         }
-        .call-button {
-            padding: 10px;
-            border-radius: 5px;
-            border: none;
-            background-color: #28a745;
-            color: #fff;
-            cursor: pointer;
-            margin: 10px;
+        #call-button {
+            background: #28a745;
         }
-        .call-button:hover {
-            background-color: #218838;
+        #call-button:hover {
+            background: #218838;
         }
     </style>
 </head>
 <body>
     <div class="chat-container" id="chat-container">
-        <!-- As mensagens serão injetadas aqui pelo JavaScript -->
+        <!-- Mensagens serão inseridas aqui pelo script -->
     </div>
     <div class="input-container">
-        <button class="call-button" id="start-call">Iniciar Chamada</button>
         <input type="text" id="message-input" placeholder="Insira sua mensagem aqui">
         <button id="send-button">Enviar</button>
+        <button id="call-button">Iniciar Chamada</button>
     </div>
 
-    <script>
-        // Inicialização do Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.12.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.12.1/firebase-firestore.js";
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js';
+        import { getFirestore, collection, addDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js';
+        import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js';
 
+        // Sua configuração do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCuYhMag13uhVsYGo6KFkGFF5COH9fMWGI",
             authDomain: "votacao-8176a.firebaseapp.com",
@@ -114,70 +103,37 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
         const chatContainer = document.getElementById('chat-container');
         const messageInput = document.getElementById('message-input');
         const sendButton = document.getElementById('send-button');
-        const startCallButton = document.getElementById('start-call');
+        const callButton = document.getElementById('call-button');
 
-        // Carregar informações do perfil
-        const userName = localStorage.getItem('userName') || 'Usuário';
-        const userPic = localStorage.getItem('userPic') || 'https://www.example.com/default-profile-pic.jpg';
+        // Obter dados do perfil do localStorage
+        const userName = localStorage.getItem('userName');
+        const userPic = localStorage.getItem('userPic');
 
-        // Função para renderizar uma mensagem
-        function renderMessage(doc) {
-            const messageData = doc.data();
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message');
-            messageElement.innerHTML = `
-                <img src="${messageData.userPic}" alt="Foto de perfil">
-                <div class="text">
-                    <span class="name">${messageData.userName}</span>
-                    <span class="timestamp">${new Date(messageData.timestamp.seconds * 1000).toLocaleTimeString()}</span>
-                    <div>${messageData.text}</div>
-                </div>
-            `;
-            chatContainer.appendChild(messageElement);
-        }
-
-        // Adicionar uma nova mensagem ao Firestore
-        async function sendMessage() {
-            const text = messageInput.value;
-            if (text.trim()) {
-                await addDoc(collection(db, 'messages'), {
-                    userName,
-                    userPic,
-                    text,
-                    timestamp: new Date()
-                });
-                messageInput.value = '';
+        // Adicionar mensagem ao Firestore
+        sendButton.addEventListener('click', async () => {
+            const message = messageInput.value;
+            if (message.trim() !== '') {
+                try {
+                    await addDoc(collection(db, 'messages'), {
+                        text: message,
+                        userName: userName || 'Desconhecido',
+                        userPhoto: userPic || 'https://www.example.com/default-profile-pic.jpg',
+                        timestamp: new Date()
+                    });
+                    messageInput.value = '';
+                } catch (e) {
+                    console.error("Erro ao enviar mensagem: ", e);
+                }
             }
-        }
+        });
 
-        // Observar as mensagens no Firestore
+        // Atualizar chat com mensagens do Firestore
         onSnapshot(collection(db, 'messages'), (snapshot) => {
             chatContainer.innerHTML = '';
-            snapshot.forEach(doc => renderMessage(doc));
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        });
-
-        // Enviar mensagem ao clicar no botão
-        sendButton.addEventListener('click', sendMessage);
-
-        // Enviar mensagem ao pressionar Enter
-        messageInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-
-        // Iniciar chamada
-        startCallButton.addEventListener('click', () => {
-            window.open('calls.html', '_blank');
-        });
-    </script>
-</body>
-</html>
-
-
-
+            snapshot.forEach((doc) => {
+                const data = doc.data();
