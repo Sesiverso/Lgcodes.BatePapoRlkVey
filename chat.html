@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votação e Bate-Papo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f0f0f0;
+            color: #333;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .vote-section, .chat-section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .vote-option {
+            margin-bottom: 10px;
+        }
+        .chat-box {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            background: #fff;
+        }
+        .chat-box div {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .chat-box img {
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+        input[type="radio"] {
+            margin-right: 10px;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="vote-section">
+            <h2>Votação</h2>
+            <p>Você tem algum macaco de pelúcia?</p>
+            <div class="vote-option">
+                <input type="radio" id="option1" name="material" value="Tenho mas não posso levar">
+                <label for="option1">Tenho mas não posso levar</label>
+            </div>
+            <div class="vote-option">
+                <input type="radio" id="option2" name="material" value="Não">
+                <label for="option2">Não</label>
+            </div>
+            <div class="vote-option">
+                <input type="radio" id="option3" name="material" value="Tenho e posso levar">
+                <label for="option3">Tenho e posso levar</label>
+            </div>
+            <button id="vote-button">Votar</button>
+            <div>
+                <p><strong>Votos:</strong></p>
+                <p id="count-Tenho%20mas%20não%20posso%20levar">0</p>
+                <p id="count-Não">0</p>
+                <p id="count-Tenho%20e%20posso%20levar">0</p>
+            </div>
+        </div>
+
+        <div class="chat-section">
+            <h2>Chat</h2>
+            <div id="messages" class="chat-box"></div>
+            <input type="text" id="message-input" placeholder="Digite sua mensagem...">
+            <button id="send-button">Enviar</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+        import { getDatabase, ref, onValue, set, push, update, get } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAfVXG-xIe4FyPpsNTtmV__HutzOQFgaVQ",
+            authDomain: "votacao-da4e2.firebaseapp.com",
+            projectId: "votacao-da4e2",
+            storageBucket: "votacao-da4e2.appspot.com",
+            messagingSenderId: "696185234268",
+            appId: "1:696185234268:web:37e1ddd097dfeea95a9799",
+            measurementId: "G-PY9XXN0ESV"
+        };
+
+        // Inicializa o Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Inicializa votos se não existirem
+        const initializeVotes = () => {
+            const options = ['Tenho mas não posso levar', 'Não', 'Tenho e posso levar'];
+            options.forEach(option => {
+                const voteRef = ref(database, `votes/${option}`);
+                get(voteRef).then(snapshot => {
+                    if (snapshot.val() === null) {
+                        set(voteRef, 0);
+                    }
+                });
+            });
+        };
+
+        // Carrega e exibe os votos
+        const loadVotes = () => {
+            const options = ['Tenho mas não posso levar', 'Não', 'Tenho e posso levar'];
+            options.forEach(option => {
+                const voteRef = ref(database, `votes/${option}`);
+                onValue(voteRef, snapshot => {
+                    const count = snapshot.val() || 0;
+                    const encodedOption = encodeURIComponent(option);
+                    document.getElementById(`count-${encodedOption}`).textContent = count;
+                });
+            });
+        };
+
+        // Envia um voto
+        const submitVote = () => {
+            const selectedOption = document.querySelector('input[name="material"]:checked');
+            if (!selectedOption) {
+                alert('Selecione uma opção para votar.');
+                return;
+            }
+
+            const option = selectedOption.value;
+            const voteRef = ref(database, `votes/${option}`);
+
+            // Verifica se o usuário já votou
+            if (localStorage.getItem('voted') === 'true') {
+                alert('Você já votou.');
+                return;
+            }
+
+            // Atualiza o voto
+            update(voteRef, (currentValue) => {
+                return (currentValue || 0) + 1;
+            }).catch(error => {
+                console.error("Erro ao atualizar o voto:", error);
+            });
+
+            localStorage.setItem('voted', 'true');
+        };
+
+        // Envia uma mensagem no chat
+        const sendMessage = () => {
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value.trim();
+
+            if (message === '') return;
+
+            const username = localStorage.getItem('username');
+            const userImage = localStorage.getItem('userImage');
+
+            const messageObject = {
+                username: username,
+                image: userImage,
+                message: message,
+                timestamp: new Date().toISOString()
+            };
+
+            const messagesRef = ref(database, 'messages');
+            push(messagesRef, messageObject);
+            messageInput.value = '';
+        };
+
+        // Exibe mensagens no chat
+        const displayMessages = () => {
+            const messagesRef = ref(database, 'messages');
+            onValue(messagesRef, snapshot => {
+                const messagesDiv = document.getElementById('messages');
+                messagesDiv.innerHTML = '';
+                snapshot.forEach(childSnapshot => {
+                    const data = childSnapshot.val();
+                    const messageElement = document.createElement('div');
+
+                    const img = document.createElement('img');
+                    img.src = data.image;
+                    img.alt = data.username;
+                    img.width = 40;
+                    img.height = 40;
+
+                    const textElement = document.createElement('span');
+                    textElement.textContent = `${data.username}: ${data.message}`;
+
+                    messageElement.appendChild(img);
+                    messageElement.appendChild(textElement);
+                    messagesDiv.appendChild(messageElement);
+                });
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            });
+        };
+
+        // Carrega votos e mensagens ao carregar a página
+        window.onload = () => {
+            initializeVotes();
+            loadVotes();
+            displayMessages();
+        };
+
+        // Adiciona eventos aos botões
+        document.getElementById('vote-button').addEventListener('click', submitVote);
+        document.getElementById('send-button').addEventListener('click', sendMessage);
+    </script>
+</body>
+</html>
