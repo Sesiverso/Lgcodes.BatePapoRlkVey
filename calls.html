@@ -3,99 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chamada de Voz</title>
+    <title>Chamada</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
             margin: 0;
-            padding: 0;
             display: flex;
+            flex-direction: column;
+            height: 100vh;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            background-color: #f0f0f0;
         }
-        .call-container {
-            text-align: center;
+        #video-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+            height: 100%;
+            max-height: 600px;
+            position: relative;
         }
-        .button-container {
-            margin-top: 20px;
+        #local-video, #remote-videos {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #ccc;
+            background-color: #000;
         }
-        .call-button {
-            padding: 15px 30px;
-            border-radius: 5px;
+        #local-video {
+            position: absolute;
+            bottom: 0;
+        }
+        #controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+            width: 100%;
+        }
+        #controls button {
+            padding: 10px 15px;
+            border-radius: 8px;
             border: none;
             cursor: pointer;
-            font-size: 16px;
-            margin: 5px;
-        }
-        .call-button.accept {
-            background-color: #28a745;
-            color: white;
-        }
-        .call-button.reject {
-            background-color: #dc3545;
-            color: white;
-        }
-        .call-button.end {
             background-color: #007BFF;
             color: white;
+            margin: 0 10px;
         }
-        .call-button:hover {
-            opacity: 0.8;
+        #controls button:hover {
+            background-color: #0056b3;
+        }
+        #participant-list {
+            margin-top: 10px;
+        }
+        #participant-list img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        #participant-list div {
+            display: flex;
+            align-items: center;
         }
     </style>
 </head>
 <body>
-    <div class="call-container">
-        <h1>Chamada de Voz</h1>
-        <p id="call-status">Aguardando...</p>
-        <div class="button-container">
-            <button class="call-button accept" id="accept-call">Aceitar</button>
-            <button class="call-button reject" id="reject-call">Recusar</button>
-            <button class="call-button end" id="end-call" style="display:none;">Encerrar Chamada</button>
-        </div>
+    <div id="video-container">
+        <video id="local-video" autoplay muted></video>
+        <div id="remote-videos"></div>
     </div>
+    <div id="controls">
+        <button id="end-call">Encerrar Chamada</button>
+        <button id="start-call">Iniciar Chamada</button>
+    </div>
+    <div id="participant-list"></div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js"></script>
 
     <script>
-        let localStream;
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDcTM9uPHMF5jRNtQfog1fL1EhFef6AvD8",
+            authDomain: "calls-6220c.firebaseapp.com",
+            databaseURL: "https://calls-6220c-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "calls-6220c",
+            storageBucket: "calls-6220c.appspot.com",
+            messagingSenderId: "343752930832",
+            appId: "1:343752930832:web:77c750525d72f2dcbb3c95",
+            measurementId: "G-DHBGBERJEN"
+        };
 
-        // Solicitar permissão para acessar o microfone
-        async function getMicrophoneAccess() {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                document.getElementById('call-status').innerText = "Microfone acessado. Pronto para a chamada.";
-            } catch (error) {
-                console.error('Erro ao acessar o microfone:', error);
-                document.getElementById('call-status').innerText = "Erro ao acessar o microfone.";
-            }
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const auth = firebase.auth();
+
+        let localStream;
+        let remoteStreams = {};
+        let peerConnections = {};
+        const configuration = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+
+        // Iniciar o acesso ao microfone
+        async function startCall() {
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            document.getElementById('local-video').srcObject = localStream;
+
+            // Adicionar a lógica para iniciar uma chamada com WebRTC
+            // Implementar sinalização e troca de ICE aqui
+
+            // Atualizar a lista de participantes
+            updateParticipantList();
         }
 
-        // Iniciar chamada de voz
-        document.getElementById('accept-call').addEventListener('click', () => {
-            document.getElementById('accept-call').style.display = 'none';
-            document.getElementById('reject-call').style.display = 'none';
-            document.getElementById('end-call').style.display = 'inline-block';
-            document.getElementById('call-status').innerText = "Chamada em andamento...";
-            // Aqui, você poderia iniciar a conexão de voz real (WebRTC, etc.)
-        });
-
-        // Recusar chamada
-        document.getElementById('reject-call').addEventListener('click', () => {
-            window.close(); // Fecha a aba de chamada
-        });
-
-        // Encerrar chamada
+        // Encerrar a chamada
         document.getElementById('end-call').addEventListener('click', () => {
-            // Aqui, você encerraria a conexão de voz real
-            document.getElementById('call-status').innerText = "Chamada encerrada. Redirecionando...";
+            for (const peerId in peerConnections) {
+                peerConnections[peerId].close();
+            }
+            localStream.getTracks().forEach(track => track.stop());
             setTimeout(() => {
-                window.location.href = 'chat.html'; // Redireciona para o chat.html após 3 segundos
+                window.location.href = 'chat.html'; // Redirecionar para o chat após 3 segundos
             }, 3000);
         });
 
-        // Solicitar acesso ao microfone ao carregar a página
-        getMicrophoneAccess();
-    </script>
-</body>
-</html>
+        // Atualizar a lista de participantes
+        function updateParticipantList() {
+            const participantsRef = database.ref('participants');
+            participantsRef.on('value', snapshot => {
+                const participants = snapshot.val();
+                const participantList = document.getElementById('participant-list');
+                participantList.innerHTML = '';
+                for (const [id, participant] of Object.entries(participants)) {
+                    const participantDiv = document.createElement('div');
+                    participantDiv.innerHTML = `
+                        <img src="${participant.img}" alt="Profile Image">
+                        <span>${participant.name}</span>
+                    `;
+                    participantList.appendChild(participantDiv);
+                }
+            });
+        }
+
+        // Solicitar acesso ao microfone e iniciar a chamada ao carregar a página
+        window.onload = async function() {
+            await startCall();
+        };
+
+        // Implementar sinalização e troca de ICE (Intercâmbio de informações de controle e de mídia)
+        // Aqui você deve adicionar a lógica para sinal
