@@ -114,13 +114,21 @@
         // Carregar mensagens ao iniciar
         loadMessages();
 
+        // Obter o nome e a imagem do usuário do localStorage
+        const name = localStorage.getItem('name');
+        const img = localStorage.getItem('img');
+
+        // Verifica se o nome e a imagem estão disponíveis
+        if (!name || !img) {
+            alert('Por favor, defina seu nome e foto de perfil na página de configurações.');
+            window.location.href = 'index.html'; // Redireciona de volta para a página de configuração
+        }
+
         // Evento de clique para enviar uma mensagem
         document.getElementById('send-button').addEventListener('click', () => {
             const messageInput = document.getElementById('message-input');
             const message = messageInput.value.trim();
             if (message) {
-                const name = localStorage.getItem('name');
-                const img = localStorage.getItem('img');
                 saveMessage(name, img, message);
                 messageInput.value = '';
             }
@@ -132,8 +140,6 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const name = localStorage.getItem('name');
-                    const img = localStorage.getItem('img');
                     saveMessage(name, img, `<a href="${e.target.result}" download>${file.name}</a>`);
                 };
                 reader.readAsDataURL(file);
