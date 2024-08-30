@@ -3,44 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Votação e Bate-Papo</title>
-    <!-- Adiciona o CSS para estilização -->
+    <title>Configuração Inicial</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
             background: #f0f0f0;
-            color: #333;
+            margin: 0;
         }
         .container {
-            width: 80%;
-            margin: 0 auto;
-            padding: 20px;
+            text-align: center;
         }
-        .vote-section, .chat-section {
-            background: #fff;
-            padding: 20px;
+        .image-option {
+            display: inline-block;
+            margin: 10px;
+            border: 2px solid #ddd;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
+            cursor: pointer;
         }
-        .vote-option {
-            margin-bottom: 10px;
-        }
-        .chat-box {
-            max-height: 300px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
+        .image-option img {
+            width: 100px;
+            height: 100px;
             border-radius: 8px;
-            padding: 10px;
-            background: #fff;
         }
-        .chat-box div {
-            margin-bottom: 10px;
-        }
-        input[type="radio"] {
-            margin-right: 10px;
+        .selected {
+            border-color: #007bff;
         }
         button {
             background-color: #007bff;
@@ -50,6 +40,7 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
+            margin-top: 20px;
         }
         button:hover {
             background-color: #0056b3;
@@ -58,153 +49,69 @@
 </head>
 <body>
     <div class="container">
-        <div class="vote-section">
-            <h2>Votação</h2>
-            <p>Você tem alguma pelucia?</p>
-            <div class="vote-option">
-                <input type="radio" id="option1" name="material" value="Tenho mas não posso levar">
-                <label for="option1">Tenho mas não posso levar</label>
-            </div>
-            <div class="vote-option">
-                <input type="radio" id="option2" name="material" value="Não">
-                <label for="option2">Não</label>
-            </div>
-            <div class="vote-option">
-                <input type="radio" id="option3" name="material" value="Tenho e posso levar">
-                <label for="option3">Tenho e posso levar</label>
-            </div>
-            <button id="vote-button">Votar</button>
-            <div>
-                <p><strong>Votos:</strong></p>
-                <p id="count-Tenho%20mas%20não%20posso%20levar">0</p>
-                <p id="count-Não">0</p>
-                <p id="count-Tenho%20e%20posso%20levar">0</p>
+        <h1>Escolha seu nome e foto</h1>
+        <div>
+            <label for="username">Digite seu nome:</label>
+            <input type="text" id="username" placeholder="Seu nome">
+        </div>
+        <div>
+            <p>Escolha uma foto:</p>
+            <div class="image-options">
+                <div class="image-option" data-image="https://www.diariodepernambuco.com.br/static/app/noticia_127983242361/2024/05/16/952809/20240516183727142193o.jpg">
+                    <img src="https://www.diariodepernambuco.com.br/static/app/noticia_127983242361/2024/05/16/952809/20240516183727142193o.jpg" alt="Foto 1">
+                </div>
+                <div class="image-option" data-image="https://preview.redd.it/what-is-your-favorite-sonic-meme-v0-t1pv65foxajb1.png?auto=webp&s=cc05c260c19666d0cb4feeb40298d37fad5066c5">
+                    <img src="https://preview.redd.it/what-is-your-favorite-sonic-meme-v0-t1pv65foxajb1.png?auto=webp&s=cc05c260c19666d0cb4feeb40298d37fad5066c5" alt="Foto 2">
+                </div>
+                <div class="image-option" data-image="https://preview.redd.it/recreating-the-you-have-alerted-the-sonic-meme-v0-ivping97ll2a1.png?auto=webp&s=ca4d75183fbfe04464e31a7e6603bbda171b343c">
+                    <img src="https://preview.redd.it/recreating-the-you-have-alerted-the-sonic-meme-v0-ivping97ll2a1.png?auto=webp&s=ca4d75183fbfe04464e31a7e6603bbda171b343c" alt="Foto 3">
+                </div>
+                <div class="image-option" data-image="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9CKPkXd8vEKt-eSTnaYXRdXh6xh_8ciGoPQ&s">
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9CKPkXd8vEKt-eSTnaYXRdXh6xh_8ciGoPQ&s" alt="Foto 4">
+                </div>
+                <div class="image-option" data-image="https://imagenes.elpais.com/resizer/v2/GLK77QHJ4JAY3KAFM5FV6YV5OM.webp?auth=09c184fe292b2932d6e90d1e57fd1dc21e111cc2044559c1cc5f7e5e04ae249d&width=414">
+                    <img src="https://imagenes.elpais.com/resizer/v2/GLK77QHJ4JAY3KAFM5FV6YV5OM.webp?auth=09c184fe292b2932d6e90d1e57fd1dc21e111cc2044559c1cc5f7e5e04ae249d&width=414" alt="Foto 5">
+                </div>
+                <div class="image-option" data-image="https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/WZEUY7Q6GMI6ZPVIGCHKCNCZJ4.jpg">
+                    <img src="https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/WZEUY7Q6GMI6ZPVIGCHKCNCZJ4.jpg" alt="Foto 6">
+                </div>
             </div>
         </div>
+        <button id="confirm-button">Confirmar</button>
 
-        <div class="chat-section">
-            <h2>Chat</h2>
-            <div id="messages" class="chat-box"></div>
-            <input type="text" id="message-input" placeholder="Digite sua mensagem...">
-            <button id="send-button">Enviar</button>
-        </div>
-    </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const selectedImageElement = document.createElement('img');
+                let selectedImageUrl = '';
+                
+                // Seleção da foto
+                document.querySelectorAll('.image-option').forEach(option => {
+                    option.addEventListener('click', () => {
+                        document.querySelectorAll('.image-option').forEach(el => el.classList.remove('selected'));
+                        option.classList.add('selected');
+                        selectedImageUrl = option.getAttribute('data-image');
+                    });
+                });
 
-    <!-- Adiciona o script com módulos ES6 -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getDatabase, ref, onValue, set, push, update, get } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
-
-        // Configuração do Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyAfVXG-xIe4FyPpsNTtmV__HutzOQFgaVQ",
-            authDomain: "votacao-da4e2.firebaseapp.com",
-            projectId: "votacao-da4e2",
-            storageBucket: "votacao-da4e2.appspot.com",
-            messagingSenderId: "696185234268",
-            appId: "1:696185234268:web:37e1ddd097dfeea95a9799",
-            measurementId: "G-PY9XXN0ESV"
-        };
-
-        // Inicializa o Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-
-        // Inicializa votos se não existirem
-        const initializeVotes = () => {
-            const options = ['Tenho mas não posso levar', 'Não', 'Tenho e posso levar'];
-            options.forEach(option => {
-                const voteRef = ref(database, `votes/${option}`);
-                get(voteRef).then(snapshot => {
-                    if (snapshot.val() === null) {
-                        set(voteRef, 0);
+                // Confirmação do nome e imagem
+                document.getElementById('confirm-button').addEventListener('click', () => {
+                    const username = document.getElementById('username').value.trim();
+                    
+                    if (username === '' || !selectedImageUrl) {
+                        alert('Por favor, insira seu nome e selecione uma foto.');
+                        return;
                     }
+
+                    // Armazena os dados no localStorage
+                    localStorage.setItem('username', username);
+                    localStorage.setItem('userImage', selectedImageUrl);
+
+                    // Redireciona para a página principal
+                    window.location.href = 'chat.html';
                 });
             });
-        };
-
-        // Carrega e exibe os votos
-        const loadVotes = () => {
-            const options = ['Tenho mas não posso levar', 'Não', 'Tenho e posso levar'];
-            options.forEach(option => {
-                const voteRef = ref(database, `votes/${option}`);
-                onValue(voteRef, snapshot => {
-                    const count = snapshot.val() || 0;
-                    document.getElementById(`count-${encodeURIComponent(option)}`).textContent = count;
-                });
-            });
-        };
-
-        // Envia um voto
-        const submitVote = () => {
-            const selectedOption = document.querySelector('input[name="material"]:checked');
-            if (!selectedOption) {
-                alert('Selecione uma opção para votar.');
-                return;
-            }
-
-            const option = selectedOption.value;
-            const voteRef = ref(database, `votes/${option}`);
-
-            // Verifica se o usuário já votou
-            if (localStorage.getItem('voted') === 'true') {
-                alert('Você já votou.');
-                return;
-            }
-
-            // Atualiza o voto
-            update(voteRef, (currentValue) => {
-                return (currentValue || 0) + 1;
-            }).catch(error => {
-                console.error("Erro ao atualizar o voto:", error);
-            });
-
-            localStorage.setItem('voted', 'true');
-        };
-
-        // Envia uma mensagem no chat
-        const sendMessage = () => {
-            const messageInput = document.getElementById('message-input');
-            const message = messageInput.value.trim();
-
-            if (message === '') return;
-
-            const messageObject = {
-                message: message,
-                timestamp: new Date().toISOString()
-            };
-
-            const messagesRef = ref(database, 'messages');
-            push(messagesRef, messageObject);
-            messageInput.value = '';
-        };
-
-        // Exibe mensagens no chat
-        const displayMessages = () => {
-            const messagesRef = ref(database, 'messages');
-            onValue(messagesRef, snapshot => {
-                const messagesDiv = document.getElementById('messages');
-                messagesDiv.innerHTML = '';
-                snapshot.forEach(childSnapshot => {
-                    const message = childSnapshot.val().message;
-                    const messageElement = document.createElement('div');
-                    messageElement.textContent = message;
-                    messagesDiv.appendChild(messageElement);
-                });
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            });
-        };
-
-        // Carrega votos e mensagens ao carregar a página
-        window.onload = () => {
-            initializeVotes();
-            loadVotes();
-            displayMessages();
-        };
-
-        // Adiciona eventos aos botões
-        document.getElementById('vote-button').addEventListener('click', submitVote);
-        document.getElementById('send-button').addEventListener('click', sendMessage);
-    </script>
+        </script>
+    </div>
 </body>
 </html>
+
