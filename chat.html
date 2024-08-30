@@ -34,7 +34,7 @@
         .chat-box div {
             margin-bottom: 10px;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
         }
         .chat-box img.profile-pic {
             border-radius: 50%;
@@ -42,10 +42,17 @@
             height: 40px;
             margin-right: 10px;
         }
+        .chat-box .message-content {
+            display: flex;
+            align-items: center;
+        }
         .chat-box img.sent-image {
             max-width: 200px;
             max-height: 200px;
             border-radius: 8px;
+            margin-left: 10px;
+        }
+        .chat-box .message-text {
             margin-left: 10px;
         }
         input[type="file"] {
@@ -135,24 +142,29 @@
                     const data = childSnapshot.val();
                     const messageElement = document.createElement('div');
 
+                    const profileContainer = document.createElement('div');
+                    profileContainer.className = 'message-content';
+
                     const img = document.createElement('img');
                     img.src = data.image;
                     img.alt = data.username;
                     img.className = 'profile-pic';
 
-                    messageElement.appendChild(img);
+                    profileContainer.appendChild(img);
 
                     if (data.fileUrl) {
                         const fileImage = document.createElement('img');
                         fileImage.src = data.fileUrl;
                         fileImage.className = 'sent-image';
-                        messageElement.appendChild(fileImage);
-                    } else {
-                        const textElement = document.createElement('span');
-                        textElement.textContent = `${data.username}: ${data.message}`;
-                        messageElement.appendChild(textElement);
+                        profileContainer.appendChild(fileImage);
                     }
 
+                    const messageText = document.createElement('span');
+                    messageText.className = 'message-text';
+                    messageText.textContent = `${data.username}: ${data.message}`;
+                    profileContainer.appendChild(messageText);
+
+                    messageElement.appendChild(profileContainer);
                     messagesDiv.appendChild(messageElement);
                 });
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
