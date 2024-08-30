@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Votação e Bate-Papo</title>
+    <title>Chat</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -17,18 +17,11 @@
             margin: 0 auto;
             padding: 20px;
         }
-        .vote-section, .chat-section {
+        .chat-section {
             background: #fff;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-        .vote-option {
-            margin-bottom: 10px;
-        }
-        .vote-option label {
-            margin-left: 10px;
         }
         .chat-box {
             max-height: 300px;
@@ -49,8 +42,8 @@
             height: 40px;
             margin-right: 10px;
         }
-        input[type="radio"] {
-            margin-right: 10px;
+        input[type="file"] {
+            margin-top: 10px;
         }
         button {
             background-color: #007bff;
@@ -60,6 +53,7 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
+            margin-top: 10px;
         }
         button:hover {
             background-color: #0056b3;
@@ -68,167 +62,94 @@
 </head>
 <body>
     <div class="container">
-        <div class="vote-section">
-            <h2>Votação</h2>
-            <p>Você tem algum macaco de pelúcia?</p>
-            <div class="vote-option">
-                <input type="radio" id="option1" name="material" value="Tenho mas não posso levar">
-                <label for="option1">Tenho mas não posso levar <span id="count-Tenho%20mas%20não%20posso%20levar">0</span></label>
-            </div>
-            <div class="vote-option">
-                <input type="radio" id="option2" name="material" value="Não">
-                <label for="option2">Não <span id="count-Não">0</span></label>
-            </div>
-            <div class="vote-option">
-                <input type="radio" id="option3" name="material" value="Tenho e posso levar">
-                <label for="option3">Tenho e posso levar <span id="count-Tenho%20e%20posso%20levar">0</span></label>
-            </div>
-            <button id="vote-button">Votar</button>
-        </div>
-
         <div class="chat-section">
             <h2>Chat</h2>
             <div id="messages" class="chat-box"></div>
             <input type="text" id="message-input" placeholder="Digite sua mensagem...">
             <button id="send-button">Enviar</button>
+
+            <div id="upload-input">
+                <input type="file" id="file-upload" accept="image/*,video/*">
+                <button id="upload-button">Enviar Arquivo</button>
+            </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-        import { getDatabase, ref, onValue, set, push, update, get } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+        import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
 
-        // Configuração do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAfVXG-xIe4FyPpsNTtmV__HutzOQFgaVQ",
             authDomain: "votacao-da4e2.firebaseapp.com",
             projectId: "votacao-da4e2",
             storageBucket: "votacao-da4e2.appspot.com",
-            messagingSenderId: "696185234268",
-            appId: "1:696185234268:web:37e1ddd097dfeea95a9799",
-            measurementId: "G-PY9XXN0ESV"
+            messagingSenderId: "846666839544",
+            appId: "1:846666839544:web:bf59a4bb7d2f6077f15b93"
         };
 
-        // Inicializa o Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
+        const storage = getStorage(app);
 
-        // Inicializa votos se não existirem
-        const initializeVotes = () => {
-            const options = ['Tenho mas não posso levar', 'Não', 'Tenho e posso levar'];
-            options.forEach(option => {
-                const voteRef = ref(database, `votes/${option}`);
-                get(voteRef).then(snapshot => {
-                    if (snapshot.val() === null) {
-                        set(voteRef, 0);
-                    }
-                });
-            });
-        };
+        const messagesRef = ref(database, 'messages');
+        const messagesDiv = document.getElementById('messages');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const uploadInput = document.getElementById('file-upload');
+        const uploadButton = document.getElementById('upload-button');
 
-        // Carrega e exibe os votos
-        const loadVotes = () => {
-            const options = ['Tenho mas não posso levar', 'Não', 'Tenho e posso levar'];
-            options.forEach(option => {
-                const voteRef = ref(database, `votes/${option}`);
-                onValue(voteRef, snapshot => {
-                    const count = snapshot.val() || 0;
-                    const encodedOption = encodeURIComponent(option);
-                    document.getElementById(`count-${encodedOption}`).textContent = count;
-                });
-            });
-        };
+        function addMessageToChat(username, userImage, message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.innerHTML = `
+                <img src="${userImage}" alt="Imagem de Perfil">
+                <strong>${username}:</strong> ${message}
+            `;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
 
-        // Envia um voto
-        const submitVote = () => {
-            const selectedOption = document.querySelector('input[name="material"]:checked');
-            if (!selectedOption) {
-                alert('Selecione uma opção para votar.');
-                return;
-            }
-
-            const option = selectedOption.value;
-            const voteRef = ref(database, `votes/${option}`);
-
-            // Verifica se o usuário já votou
-            if (localStorage.getItem('voted') === 'true') {
-                alert('Você já votou.');
-                return;
-            }
-
-            // Atualiza o voto
-            update(voteRef, (currentValue) => {
-                return (currentValue || 0) + 1;
-            }).then(() => {
-                // Atualiza a contagem na interface
-                const encodedOption = encodeURIComponent(option);
-                document.getElementById(`count-${encodedOption}`).textContent = (parseInt(document.getElementById(`count-${encodedOption}`).textContent) + 1);
-            }).catch(error => {
-                console.error("Erro ao atualizar o voto:", error);
-            });
-
-            localStorage.setItem('voted', 'true');
-        };
-
-        // Envia uma mensagem no chat
-        const sendMessage = () => {
-            const messageInput = document.getElementById('message-input');
-            const message = messageInput.value.trim();
-
-            if (message === '') return;
-
+        sendButton.addEventListener('click', () => {
             const username = localStorage.getItem('username');
             const userImage = localStorage.getItem('userImage');
+            const message = messageInput.value.trim();
 
-            const messageObject = {
-                username: username,
-                image: userImage,
-                message: message,
-                timestamp: new Date().toISOString()
-            };
-
-            const messagesRef = ref(database, 'messages');
-            push(messagesRef, messageObject);
-            messageInput.value = '';
-        };
-
-        // Exibe mensagens no chat
-        const displayMessages = () => {
-            const messagesRef = ref(database, 'messages');
-            onValue(messagesRef, snapshot => {
-                const messagesDiv = document.getElementById('messages');
-                messagesDiv.innerHTML = '';
-                snapshot.forEach(childSnapshot => {
-                    const data = childSnapshot.val();
-                    const messageElement = document.createElement('div');
-
-                    const img = document.createElement('img');
-                    img.src = data.image;
-                    img.alt = data.username;
-                    img.width = 40;
-                    img.height = 40;
-
-                    const textElement = document.createElement('span');
-                    textElement.textContent = `${data.username}: ${data.message}`;
-
-                    messageElement.appendChild(img);
-                    messageElement.appendChild(textElement);
-                    messagesDiv.appendChild(messageElement);
+            if (message !== '') {
+                push(messagesRef, {
+                    username,
+                    userImage,
+                    message
                 });
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                messageInput.value = '';
+            }
+        });
+
+        onValue(messagesRef, (snapshot) => {
+            messagesDiv.innerHTML = '';
+            snapshot.forEach((childSnapshot) => {
+                const { username, userImage, message } = childSnapshot.val();
+                addMessageToChat(username, userImage, message);
             });
-        };
+        });
 
-        // Carrega votos e mensagens ao carregar a página
-        window.onload = () => {
-            initializeVotes();
-            loadVotes();
-            displayMessages();
-        };
-
-        // Adiciona eventos aos botões
-        document.getElementById('vote-button').addEventListener('click', submitVote);
-        document.getElementById('send-button').addEventListener('click', sendMessage);
+        uploadButton.addEventListener('click', () => {
+            const file = uploadInput.files[0];
+            if (file) {
+                const storageReference = storageRef(storage, 'uploads/' + file.name);
+                uploadBytes(storageReference, file).then(() => {
+                    getDownloadURL(storageReference).then((url) => {
+                        const username = localStorage.getItem('username');
+                        const userImage = localStorage.getItem('userImage');
+                        push(messagesRef, {
+                            username,
+                            userImage,
+                            message: `<a href="${url}" target="_blank">Arquivo enviado</a>`
+                        });
+                    });
+                });
+            }
+        });
     </script>
 </body>
 </html>
