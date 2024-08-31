@@ -20,75 +20,82 @@
             padding: 20px;
             border-bottom: 1px solid #ccc;
         }
-        .message {
+        .chat-message {
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
         }
-        .message img {
-            width: 30px;
-            height: 30px;
+        .chat-message img {
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             margin-right: 10px;
         }
-        .message span {
-            font-size: 14px;
+        .chat-message .message-content {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
         }
-        .controls {
+        .input-container {
+            display: flex;
+            align-items: center;
             padding: 10px;
             background-color: #fff;
             border-top: 1px solid #ccc;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
-        .controls input[type="text"] {
+        .input-container input[type="text"] {
             flex: 1;
             padding: 10px;
             border-radius: 8px;
             border: 1px solid #ccc;
             margin-right: 10px;
         }
-        .controls button {
+        .input-container button {
             padding: 10px 15px;
             border-radius: 8px;
             border: none;
             cursor: pointer;
             background-color: #007BFF;
             color: white;
+            margin-right: 10px;
         }
-        .controls button:hover {
+        .input-container button:hover {
             background-color: #0056b3;
         }
-        .call-notification {
+        .input-container input[type="file"] {
             display: none;
+        }
+        #start-call {
             background-color: #28a745;
-            color: white;
-            padding: 10px;
-            text-align: center;
+        }
+        #start-call:hover {
+            background-color: #218838;
         }
     </style>
 </head>
 <body>
     <div class="chat-container" id="chat-container">
-        <!-- Mensagens do chat -->
+        <!-- Mensagens serão exibidas aqui -->
     </div>
 
-    <div class="controls">
+    <div class="input-container">
         <input type="text" id="message-input" placeholder="Insira sua mensagem aqui...">
-        <button id="send-message">Enviar</button>
-        <button id="upload-file">Upload de Arquivo</button>
+        <button id="send-button">Enviar</button>
+        <label for="file-input" style="cursor: pointer;">
+            <button id="file-button">Enviar Arquivo</button>
+        </label>
+        <input type="file" id="file-input">
         <button id="start-call">Iniciar Chamada</button>
-    </div>
-
-    <div class="call-notification" id="call-notification">
-        Uma chamada está em andamento. <button id="join-call">Participar</button>
     </div>
 
     <!-- Import Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-database.js";
-        import { getStorage, ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-storage.js";
+        import { getDatabase, ref, onValue, set, push, remove } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-database.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-storage.js";
 
+        // Configuração do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCuYhMag13uhVsYGo6KFkGFF5COH9fMWGI",
             authDomain: "votacao-8176a.firebaseapp.com",
@@ -104,84 +111,82 @@
         const database = getDatabase(app);
         const storage = getStorage(app);
 
-        const callStatusRef = ref(database, 'callStatus');
+        const messagesRef = ref(database, 'messages');
         const chatContainer = document.getElementById('chat-container');
         const messageInput = document.getElementById('message-input');
-        const sendMessageButton = document.getElementById('send-message');
-        const uploadFileButton = document.getElementById('upload-file');
+        const sendButton = document.getElementById('send-button');
+        const fileInput = document.getElementById('file-input');
+        const fileButton = document.getElementById('file-button');
         const startCallButton = document.getElementById('start-call');
-        const callNotification = document.getElementById('call-notification');
-        const joinCallButton = document.getElementById('join-call');
 
-        // Verificar o status da chamada
-        onValue(callStatusRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data && data.status === 'in_progress') {
-                callNotification.style.display = 'block';
-            } else {
-                callNotification.style.display = 'none';
-            }
-        });
+        // Função para carregar as mensagens armazenadas
+        function loadMessages() {
+            onValue(messagesRef, (snapshot) => {
+                chatContainer.innerHTML = '';
+                const messages = snapshot.val();
+                if (messages) {
+                    for (const key in messages) {
+                        const { name, img, message } = messages[key];
+                        const messageElement = document.createElement('div');
+                        messageElement.className = 'chat-message';
+                        messageElement.innerHTML = `
+                            <img src="${img}" alt="Profile Image">
+                            <div class="message-content">
+                                <strong>${name}: </strong>${message}
+                            </div>
+                        `;
+                        chatContainer.appendChild(messageElement);
+                    }
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }
+            });
+        }
 
-        // Enviar mensagem
-        sendMessageButton.addEventListener('click', () => {
-            const message = messageInput.value;
+        // Função para salvar uma nova mensagem
+        function saveMessage(name, img, message) {
+            const newMessageRef = push(messagesRef);
+            set(newMessageRef, {
+                name,
+                img,
+                message
+            });
+        }
+
+        // Evento de clique para enviar uma mensagem
+        sendButton.addEventListener('click', () => {
+            const name = localStorage.getItem('name');
+            const img = localStorage.getItem('img');
+            const message = messageInput.value.trim();
             if (message) {
-                const user = {
-                    name: localStorage.getItem('name'),
-                    img: localStorage.getItem('img')
-                };
-                const messageRef = ref(database, 'messages').push();
-                set(messageRef, {
-                    user: user,
-                    text: message,
-                    timestamp: new Date().toISOString()
-                });
+                saveMessage(name, img, message);
                 messageInput.value = '';
             }
         });
 
-        // Upload de arquivo
-        uploadFileButton.addEventListener('click', () => {
-            const fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.accept = 'image/*,video/*';
-            fileInput.addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (file) {
-                    const storageRef = sRef(storage, `uploads/${file.name}`);
-                    uploadBytes(storageRef, file).then(() => {
-                        getDownloadURL(storageRef).then((url) => {
-                            const user = {
-                                name: localStorage.getItem('name'),
-                                img: localStorage.getItem('img')
-                            };
-                            const fileRef = ref(database, 'files').push();
-                            set(fileRef, {
-                                user: user,
-                                fileURL: url,
-                                timestamp: new Date().toISOString()
-                            });
-                        });
-                    });
+        // Evento de envio de arquivo
+        fileInput.addEventListener('change', async function() {
+            const file = this.files[0];
+            if (file) {
+                const name = localStorage.getItem('name');
+                const img = localStorage.getItem('img');
+                const fileRef = storageRef(storage, `chat-files/${file.name}`);
+                try {
+                    await uploadBytes(fileRef, file);
+                    const fileURL = await getDownloadURL(fileRef);
+                    saveMessage(name, img, `<a href="${fileURL}" download>${file.name}</a>`);
+                } catch (error) {
+                    console.error('Erro ao fazer upload do arquivo:', error);
                 }
-            });
-            fileInput.click();
+            }
         });
 
-        // Iniciar chamada
+        // Evento de clique para iniciar uma chamada
         startCallButton.addEventListener('click', () => {
-            set(callStatusRef, {
-                status: 'in_progress'
-            }).then(() => {
-                window.location.href = 'calls.html';
-            });
+            window.open('calls.html', '_blank');
         });
 
-        // Participar da chamada
-        joinCallButton.addEventListener('click', () => {
-            window.location.href = 'calls.html';
-        });
+        // Carregar mensagens ao iniciar
+        loadMessages();
     </script>
 </body>
 </html>
