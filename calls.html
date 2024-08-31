@@ -14,25 +14,27 @@
             height: 100vh;
             background-color: #f7f7f7;
         }
-        .video-container {
+        .container {
             flex: 1;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            background-color: #e9ecef;
         }
-        video {
-            width: 100%;
-            max-width: 600px;
-            border: 1px solid #ccc;
+        #participants {
+            margin-bottom: 20px;
+        }
+        .participant {
+            margin: 10px;
+            padding: 10px;
             border-radius: 8px;
+            background-color: #fff;
+            border: 1px solid #ccc;
         }
         .controls {
             display: flex;
             justify-content: center;
-            padding: 10px;
-            border-top: 1px solid #ccc;
-            background-color: #fff;
+            align-items: center;
         }
         .controls button {
             padding: 10px 15px;
@@ -41,7 +43,7 @@
             cursor: pointer;
             background-color: #007BFF;
             color: white;
-            margin-right: 10px;
+            margin: 0 10px;
         }
         .controls button:hover {
             background-color: #0056b3;
@@ -49,12 +51,12 @@
     </style>
 </head>
 <body>
-    <div class="video-container">
-        <video id="localVideo" autoplay muted></video>
-        <video id="remoteVideo" autoplay></video>
-    </div>
-    <div class="controls">
-        <button id="hangup-button">Desligar Chamada</button>
+    <div class="container">
+        <div id="participants"></div>
+        <div class="controls">
+            <button id="endCallButton">Encerrar Chamada</button>
+            <button id="backToChatButton">Voltar ao Chat</button>
+        </div>
     </div>
 
     <!-- Import Firebase SDKs -->
@@ -77,103 +79,121 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
+        const participantsRef = ref(database, 'call/participants');
         const callRef = ref(database, 'call');
-        const localVideo = document.getElementById('localVideo');
-        const remoteVideo = document.getElementById('remoteVideo');
-        const hangupButton = document.getElementById('hangup-button');
+        const endCallButton = document.getElementById('endCallButton');
+        const backToChatButton = document.getElementById('backToChatButton');
+        const participantsDiv = document.getElementById('participants');
 
         let localStream;
-        let remoteStream;
-        let peerConnection;
-
+        let peerConnections = {};
         const configuration = {
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' }
+            ]
         };
 
         async function startCall() {
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                localVideo.srcObject = localStream;
+                // Broadcast your stream
+                const localPeerConnection = new RTCPeerConnection(configuration);
+                localStream.getTracks().forEach(track => localPeerConnection.addTrack(track, localStream));
 
-                peerConnection = new RTCPeerConnection(configuration);
-
-                localStream.getTracks().forEach(track => {
-                    peerConnection.addTrack(track, localStream);
-                });
-
-                peerConnection.ontrack = (event) => {
-                    remoteStream = event.streams[0];
-                    remoteVideo.srcObject = remoteStream;
-                };
-
-                peerConnection.onicecandidate = (event) => {
+                localPeerConnection.onicecandidate = event => {
                     if (event.candidate) {
-                        set(ref(callRef, 'ice-candidate'), event.candidate.toJSON());
+                        // Send the ICE candidate to the remote peer
                     }
                 };
 
-                onValue(callRef, (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) {
-                        if (data.offer) {
-                            handleOffer(data.offer);
-                        } else if (data.answer) {
-                            handleAnswer(data.answer);
-                        } else if (data['ice-candidate']) {
-                            handleIceCandidate(data['ice-candidate']);
-                        }
-                    }
-                });
-
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-                set(ref(callRef, 'offer'), offer.toJSON());
-
+                // Notify Firebase that you are in a call
+                await set(ref(database, 'call/inCall'), true);
             } catch (error) {
-                console.error('Erro ao iniciar a chamada:', error);
+                console.error('Erro ao acessar dispositivos de mídia.', error);
             }
         }
 
-        async function handleOffer(offer) {
-            if (!peerConnection) {
-                startCall();
-            }
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-            set(ref(callRef, 'answer'), answer.toJSON());
+        function handleNewParticipant(participantId) {
+            const participantDiv = document.createElement('div');
+            participantDiv.classList.add('participant');
+            participantDiv.id = `participant-${participantId}`;
+
+            // Create an audio element for the participant
+            const audio = document.createElement('audio');
+            audio.id = `audio-${participantId}`;
+            audio.autoplay = true;
+            participantDiv.appendChild(audio);
+
+            participantsDiv.appendChild(participantDiv);
         }
 
-        async function handleAnswer(answer) {
-            if (peerConnection) {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+        function handleRemoteStream(event, participantId) {
+            const audio = document.getElementById(`audio-${participantId}`);
+            if (audio) {
+                audio.srcObject = event.streams[0];
             }
         }
 
-        async function handleIceCandidate(candidate) {
-            if (peerConnection) {
-                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-            }
+        function handleParticipantJoined(participantId) {
+            handleNewParticipant(participantId);
+
+            // Setup peer connection for the new participant
+            const peerConnection = new RTCPeerConnection(configuration);
+            peerConnections[participantId] = peerConnection;
+
+            peerConnection.ontrack = event => handleRemoteStream(event, participantId);
+            peerConnection.onicecandidate = event => {
+                if (event.candidate) {
+                    // Send the ICE candidate to the remote peer
+                }
+            };
+
+            // TODO: Set up offer/answer process
         }
 
-        function endCall() {
-            if (peerConnection) {
-                peerConnection.close();
-                peerConnection = null;
+        function handleParticipantLeft(participantId) {
+            const participantDiv = document.getElementById(`participant-${participantId}`);
+            if (participantDiv) {
+                participantDiv.remove();
             }
+            delete peerConnections[participantId];
+        }
+
+        endCallButton.addEventListener('click', async () => {
+            await remove(ref(database, 'call/inCall'));
+            // Clean up peer connections
+            Object.values(peerConnections).forEach(peerConnection => peerConnection.close());
             if (localStream) {
                 localStream.getTracks().forEach(track => track.stop());
             }
-            remoteVideo.srcObject = null;
-            localVideo.srcObject = null;
-            remove(callRef);
             window.location.href = 'chat.html';
-        }
+        });
 
-        hangupButton.addEventListener('click', endCall);
+        backToChatButton.addEventListener('click', () => {
+            window.location.href = 'chat.html';
+        });
 
-        // Iniciar chamada quando a página carrega
-        startCall();
+        // Listen for changes to the call state and participants
+        onValue(ref(database, 'call/participants'), snapshot => {
+            const participants = snapshot.val();
+            if (participants) {
+                Object.keys(participants).forEach(participantId => {
+                    if (!document.getElementById(`participant-${participantId}`)) {
+                        handleParticipantJoined(participantId);
+                    }
+                });
+            }
+        });
+
+        onValue(ref(database, 'call/inCall'), snapshot => {
+            const inCall = snapshot.val();
+            if (inCall) {
+                startCall();
+            } else {
+                endCallButton.style.display = 'none';
+                backToChatButton.style.display = 'block';
+            }
+        });
     </script>
 </body>
 </html>
