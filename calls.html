@@ -3,39 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chamada de Voz</title>
+    <title>Chamadas</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
             margin: 0;
             padding: 0;
             background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
         }
 
         #participants {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            background-color: #fff;
             border-bottom: 1px solid #ccc;
-        }
-
-        #participants-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
+            overflow-y: auto;
+            flex: 1;
         }
 
         .participant {
-            padding: 10px;
-            background-color: #fff;
-            margin-bottom: 10px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
             display: flex;
             align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
         }
 
         .participant img {
@@ -46,38 +43,53 @@
         }
 
         #controls {
+            display: flex;
             padding: 10px;
             background-color: #fff;
             border-top: 1px solid #ccc;
-            display: flex;
-            justify-content: space-between;
+        }
+
+        #muteButton, #endCallButton {
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        #muteButton {
+            background-color: #f44336;
+            color: white;
         }
 
         #endCallButton {
-            padding: 10px;
-            border: none;
-            background-color: #FF4136;
+            background-color: #2196F3;
             color: white;
-            border-radius: 4px;
-            cursor: pointer;
         }
 
-        #endCallButton:hover {
-            background-color: #c23629;
+        #status {
+            padding: 10px;
+            background-color: #ff9800;
+            color: white;
+            text-align: center;
+            cursor: pointer;
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div id="participants">
-        <ul id="participants-list"></ul>
-    </div>
+    <div id="status">A chamada está em andamento. Clique para retornar ao chat.</div>
+    <div id="participants"></div>
     <div id="controls">
+        <button id="muteButton">Mute</button>
         <button id="endCallButton">Encerrar Chamada</button>
     </div>
 
+    <!-- Importando os SDKs do Firebase e WebRTC -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-database.js";
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
+        import { getDatabase, ref, onChildAdded, onChildRemoved, set } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js';
+        import { getStorage, ref as storageRef, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-storage.js';
 
         // Configuração do Firebase
         const firebaseConfig = {
@@ -91,198 +103,141 @@
             measurementId: "G-BEQ9LWFRCS"
         };
 
+        // Inicializando o Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
+        const storage = getStorage(app);
 
-        const callRef = ref(database, 'call/inCall');
-        const participantsRef = ref(database, 'call/participants');
-        const currentUserId = 'user_' + Date.now(); // Gerar ID único para o usuário
-
-        const participantsList = document.getElementById('participants-list');
-        const endCallButton = document.getElementById('endCallButton');
-
+        let localStream;
         const peerConnections = {};
-        const servers = {
-            iceServers: [
-                { urls: "stun:stun.l.google.com:19302" }
-            ]
-        };
+        const participantsRef = ref(database, 'participants');
+        const callRef = ref(database, 'currentCall');
 
-        async function startCall() {
-            // Solicitar permissão para acessar o microfone
+        // Função para solicitar permissão de microfone
+        async function getUserMedia() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-                // Adicionar participante à lista de participantes
-                const newParticipantRef = push(participantsRef);
-                set(newParticipantRef, {
-                    id: currentUserId,
-                    name: "Você",
-                    photoURL: "https://via.placeholder.com/40" // Substituir pela foto do perfil real
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                localStream.getTracks().forEach(track => {
+                    const peerConnection = new RTCPeerConnection();
+                    peerConnection.addTrack(track, localStream);
+                    peerConnections[track.id] = peerConnection;
                 });
-
-                // Adicionar a própria stream de áudio para todos os peers conectados
-                onValue(participantsRef, snapshot => {
-                    participantsList.innerHTML = '';
-                    snapshot.forEach(childSnapshot => {
-                        const participant = childSnapshot.val();
-                        const listItem = document.createElement('li');
-                        listItem.classList.add('participant');
-
-                        const img = document.createElement('img');
-                        img.src = participant.photoURL;
-                        listItem.appendChild(img);
-
-                        const span = document.createElement('span');
-                        span.textContent = participant.name;
-                        listItem.appendChild(span);
-
-                        participantsList.appendChild(listItem);
-
-                        if (participant.id !== currentUserId) {
-                            createPeerConnection(participant.id, stream);
-                        }
-                    });
-                });
-
-                // Receber streams de outros peers
-                onValue(ref(database, 'call/iceCandidates'), snapshot => {
-                    const iceCandidates = snapshot.val();
-                    if (iceCandidates) {
-                        for (let id in iceCandidates) {
-                            if (peerConnections[id]) {
-                                peerConnections[id].addIceCandidate(new RTCIceCandidate(iceCandidates[id]));
-                            }
-                        }
-                    }
-                });
-
-                onValue(ref(database, 'call/offers'), snapshot => {
-                    const offers = snapshot.val();
-                    if (offers && offers[currentUserId]) {
-                        handleOffer(offers[currentUserId], stream);
-                    }
-                });
-
-                onValue(ref(database, 'call/answers'), snapshot => {
-                    const answers = snapshot.val();
-                    if (answers && peerConnections[answers.from]) {
-                        peerConnections[answers.from].setRemoteDescription(new RTCSessionDescription(answers.answer));
-                    }
-                });
-
-            } catch (error) {
-                console.error("Permissão de microfone negada ou erro ao acessar o microfone:", error);
+            } catch (err) {
+                console.error('Erro ao acessar o microfone: ', err);
             }
         }
 
-        function createPeerConnection(participantId, stream) {
-            const peerConnection = new RTCPeerConnection(servers);
-            peerConnections[participantId] = peerConnection;
-
-            stream.getTracks().forEach(track => {
-                peerConnection.addTrack(track, stream);
+        // Função para criar uma oferta de chamada
+        async function createOffer() {
+            const peerConnection = new RTCPeerConnection();
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
             });
-
-            peerConnection.onicecandidate = event => {
-                if (event.candidate) {
-                    const iceCandidateRef = ref(database, `call/iceCandidates/${participantId}`);
-                    set(iceCandidateRef, event.candidate.toJSON());
-                }
-            };
-
-            peerConnection.ontrack = event => {
-                const audioElement = document.createElement('audio');
-                audioElement.srcObject = event.streams[0];
-                audioElement.autoplay = true;
-                document.body.appendChild(audioElement);
-            };
-
-            peerConnection.createOffer().then(offer => {
-                peerConnection.setLocalDescription(offer);
-                const offerRef = ref(database, `call/offers/${participantId}`);
-                set(offerRef, {
-                    from: currentUserId,
-                    offer: offer.toJSON()
-                });
-            });
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            set(ref(database, 'currentCall/offer'), offer);
+            peerConnections[peerConnection.id] = peerConnection;
         }
 
-        async function handleOffer(offer, stream) {
-            const peerConnection = new RTCPeerConnection(servers);
-            peerConnections[offer.from] = peerConnection;
+        // Função para adicionar um novo participante
+        function addParticipant(participant) {
+            const participantElement = document.createElement('div');
+            participantElement.className = 'participant';
+            participantElement.id = participant.id;
+            participantElement.innerHTML = `
+                <img src="${participant.img}" alt="Profile Image">
+                <div>${participant.name}</div>
+            `;
+            document.getElementById('participants').appendChild(participantElement);
+        }
 
-            stream.getTracks().forEach(track => {
-                peerConnection.addTrack(track, stream);
-            });
+        // Função para remover um participante
+        function removeParticipant(id) {
+            const participantElement = document.getElementById(id);
+            if (participantElement) {
+                participantElement.remove();
+            }
+        }
 
-            peerConnection.onicecandidate = event => {
-                if (event.candidate) {
-                    const iceCandidateRef = ref(database, `call/iceCandidates/${offer.from}`);
-                    set(iceCandidateRef, event.candidate.toJSON());
-                }
-            };
-
-            peerConnection.ontrack = event => {
-                const audioElement = document.createElement('audio');
-                audioElement.srcObject = event.streams[0];
-                audioElement.autoplay = true;
-                document.body.appendChild(audioElement);
-            };
-
-            peerConnection.setRemoteDescription(new RTCSessionDescription(offer.offer));
+        // Função para lidar com a resposta de chamada
+        function handleOffer(offer) {
+            const peerConnection = new RTCPeerConnection();
+            peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
             peerConnection.createAnswer().then(answer => {
                 peerConnection.setLocalDescription(answer);
-                const answerRef = ref(database, `call/answers/${offer.from}`);
-                set(answerRef, {
-                    from: currentUserId,
-                    answer: answer.toJSON()
-                });
+                set(ref(database, 'currentCall/answer'), answer);
             });
+            peerConnection.ontrack = event => {
+                const audioElement = document.createElement('audio');
+                audioElement.srcObject = event.streams[0];
+                audioElement.autoplay = true;
+                document.body.appendChild(audioElement);
+            };
+            peerConnections[peerConnection.id] = peerConnection;
         }
 
-        // Finalizar a chamada
-        endCallButton.addEventListener('click', async () => {
-            // Remover o participante atual
-            const participantToRemoveRef = ref(database, `call/participants/${currentUserId}`);
-            await remove(participantToRemoveRef);
-
-            // Fechar todas as conexões
-            for (let participantId in peerConnections) {
-                peerConnections[participantId].close();
+        // Função para lidar com as mensagens de chamada
+        function handleCallMessages(snapshot) {
+            const data = snapshot.val();
+            if (data.offer) {
+                handleOffer(data.offer);
+            } else if (data.answer) {
+                const peerConnection = peerConnections[data.id];
+                peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
             }
+        }
 
-            // Se não houver mais participantes, encerrar a chamada
-            onValue(participantsRef, snapshot => {
-                if (!snapshot.exists()) {
-                    set(callRef, false);
-                }
+        // Função para solicitar permissões e iniciar a chamada
+        async function initCall() {
+            await getUserMedia();
+            createOffer();
+        }
+
+        // Função para iniciar o sistema de chamadas
+        function startCall() {
+            set(ref(database, 'currentCall'), {
+                name: localStorage.getItem('name'),
+                img: localStorage.getItem('img')
             });
+            initCall();
+        }
 
+        // Função para encerrar a chamada
+        function endCall() {
+            set(ref(database, 'currentCall'), null);
             window.location.href = 'chat.html';
+        }
+
+        // Função para silenciar o áudio
+        function toggleMute() {
+            const isMuted = localStream.getAudioTracks()[0].enabled;
+            localStream.getAudioTracks().forEach(track => {
+                track.enabled = !isMuted;
+            });
+            document.getElementById('muteButton').textContent = isMuted ? 'Mute' : 'Unmute';
+        }
+
+        // Configuração dos ouvintes de eventos
+        document.getElementById('muteButton').addEventListener('click', toggleMute);
+        document.getElementById('endCallButton').addEventListener('click', endCall);
+
+        // Inicialização
+        onChildAdded(participantsRef, (snapshot) => {
+            addParticipant(snapshot.val());
         });
 
-        // Iniciar a chamada
-        onValue(callRef, async (snapshot) => {
-            const inCall = snapshot.val();
-            if (inCall) {
-                await startCall();
-            }
+        onChildRemoved(participantsRef, (snapshot) => {
+            removeParticipant(snapshot.key);
         });
 
-        // Sinalizar que o usuário está na chamada
-        set(callRef, true);
-
-        // Adicionar o usuário aos participantes quando a página for carregada
-        window.addEventListener('load', () => {
-            startCall();
+        // Monitorando as chamadas
+        onChildAdded(callRef, handleCallMessages);
+        onChildRemoved(callRef, () => {
+            document.getElementById('status').style.display = 'none';
         });
 
-        // Remover o usuário dos participantes quando ele sair da página
-        window.addEventListener('beforeunload', async () => {
-            const participantToRemoveRef = ref(database, `call/participants/${currentUserId}`);
-            await remove(participantToRemoveRef);
-        });
+        // Mostrar notificação de chamada em andamento
+        document.getElementById('status').style.display = 'block';
     </script>
 </body>
 </html>
