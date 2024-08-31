@@ -1,91 +1,106 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configurações de Perfil</title>
+    <title>Escolha Seu Perfil</title>
     <style>
-        /* Estilos básicos para as imagens e o formulário */
         body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f7f7f7;
         }
-        .profile-container {
+        .profile-preview {
+            margin-bottom: 20px;
             text-align: center;
         }
-        .profile-image {
+        .profile-preview img {
             width: 100px;
             height: 100px;
             border-radius: 50%;
-            object-fit: cover;
-            margin: 10px;
+            margin-bottom: 10px;
         }
-        #preview {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            margin-bottom: 20px;
-            border: 2px solid #000;
-        }
-        .circle-container {
+        .profile-options {
             display: flex;
             justify-content: center;
+            margin-bottom: 20px;
         }
-        .circle-container img {
-            cursor: pointer;
+        .profile-options img {
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            width: 60px;
-            height: 60px;
+            cursor: pointer;
             margin: 0 10px;
-            object-fit: cover;
-            border: 2px solid transparent;
+            transition: transform 0.3s ease;
         }
-        .circle-container img.selected {
-            border-color: blue;
+        .profile-options img:hover {
+            transform: scale(1.1);
+        }
+        input[type="text"] {
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            width: 300px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+        }
+        button:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
 <body>
-    <div class="profile-container">
-        <h2>Selecione sua imagem de perfil e insira seu nome:</h2>
-        <img id="preview" src="https://via.placeholder.com/100" alt="Preview">
-        <input type="text" id="username" placeholder="Insira seu nome aqui">
-        <div class="circle-container">
-            <img src="https://www.diariodepernambuco.com.br/static/app/noticia_127983242361/2024/05/16/952809/20240516183727142193o.jpg" class="profile-image">
-            <img src="https://preview.redd.it/what-is-your-favorite-sonic-meme-v0-t1pv65foxajb1.png?auto=webp&s=cc05c260c19666d0cb4feeb40298d37fad5066c5" class="profile-image">
-            <img src="https://preview.redd.it/recreating-the-you-have-alerted-the-sonic-meme-v0-ivping97ll2a1.png?auto=webp&s=ca4d75183fbfe04464e31a7e6603bbda171b343c" class="profile-image">
-            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9CKPkXd8vEKt-eSTnaYXRdXh6xh_8ciGoPQ&s" class="profile-image">
-            <img src="https://imagenes.elpais.com/resizer/v2/GLK77QHJ4JAY3KAFM5FV6YV5OM.webp?auth=09c184fe292b2932d6e90d1e57fd1dc21e111cc2044559c1cc5f7e5e04ae249d&width=414" class="profile-image">
-            <img src="https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/WZEUY7Q6GMI6ZPVIGCHKCNCZJ4.jpg" class="profile-image">
-        </div>
-        <button onclick="saveProfile()">OK</button>
+    <div class="profile-preview">
+        <img id="profile-img-preview" src="" alt="Escolha uma imagem">
+        <p id="profile-name-preview">Insira seu nome aqui</p>
     </div>
 
-    <script>
-        // Lógica para selecionar a imagem e salvar no localStorage
-        const images = document.querySelectorAll('.profile-image');
-        let selectedImage = '';
+    <div class="profile-options">
+        <img src="https://www.diariodepernambuco.com.br/static/app/noticia_127983242361/2024/05/16/952809/20240516183727142193o.jpg" alt="Imagem 1" onclick="selectImage(this.src)">
+        <img src="https://preview.redd.it/what-is-your-favorite-sonic-meme-v0-t1pv65foxajb1.png?auto=webp&s=cc05c260c19666d0cb4feeb40298d37fad5066c5" alt="Imagem 2" onclick="selectImage(this.src)">
+        <img src="https://preview.redd.it/recreating-the-you-have-alerted-the-sonic-meme-v0-ivping97ll2a1.png?auto=webp&s=ca4d75183fbfe04464e31a7e6603bbda171b343c" alt="Imagem 3" onclick="selectImage(this.src)">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9CKPkXd8vEKt-eSTnaYXRdXh6xh_8ciGoPQ&s" alt="Imagem 4" onclick="selectImage(this.src)">
+        <img src="https://imagenes.elpais.com/resizer/v2/GLK77QHJ4JAY3KAFM5FV6YV5OM.webp?auth=09c184fe292b2932d6e90d1e57fd1dc21e111cc2044559c1cc5f7e5e04ae249d&width=414" alt="Imagem 5" onclick="selectImage(this.src)">
+        <img src="https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/WZEUY7Q6GMI6ZPVIGCHKCNCZJ4.jpg" alt="Imagem 6" onclick="selectImage(this.src)">
+    </div>
 
-        images.forEach(image => {
-            image.addEventListener('click', () => {
-                images.forEach(img => img.classList.remove('selected'));
-                image.classList.add('selected');
-                selectedImage = image.src;
-                document.getElementById('preview').src = selectedImage;
-            });
-        });
+    <input type="text" id="name-input" placeholder="Insira seu nome aqui" oninput="updateNamePreview()">
+
+    <button onclick="saveProfile()">Confirmar</button>
+
+    <script>
+        function selectImage(src) {
+            document.getElementById('profile-img-preview').src = src;
+        }
+
+        function updateNamePreview() {
+            const name = document.getElementById('name-input').value;
+            document.getElementById('profile-name-preview').textContent = name;
+        }
 
         function saveProfile() {
-            const username = document.getElementById('username').value;
-            if (username && selectedImage) {
-                localStorage.setItem('username', username);
-                localStorage.setItem('profileImage', selectedImage);
+            const name = document.getElementById('name-input').value;
+            const img = document.getElementById('profile-img-preview').src;
+
+            if (name && img) {
+                localStorage.setItem('name', name);
+                localStorage.setItem('img', img);
                 window.location.href = 'chat.html';
             } else {
-                alert('Por favor, insira seu nome e escolha uma imagem.');
+                alert('Por favor, insira um nome e escolha uma imagem.');
             }
         }
     </script>
