@@ -23,7 +23,7 @@
         .chat-message {
             margin-bottom: 10px;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
         }
         .chat-message img {
             width: 40px;
@@ -72,6 +72,9 @@
         .input-container input[type="file"] {
             display: none;
         }
+        .input-container label {
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -82,7 +85,7 @@
     <div class="input-container">
         <input type="text" id="message-input" placeholder="Insira sua mensagem aqui...">
         <button id="send-button">Enviar</button>
-        <label for="file-input" style="cursor: pointer;">
+        <label for="file-input">
             <button id="file-button">Enviar Imagem</button>
         </label>
         <input type="file" id="file-input" accept="image/*">
