@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat com Upload de Arquivos</title>
+    <title>Chat</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -36,11 +36,6 @@
             color: white;
             padding: 10px;
             border-radius: 8px;
-        }
-        .chat-message .file-link {
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
         }
         .input-container {
             display: flex;
@@ -87,13 +82,14 @@
         <input type="file" id="file-input">
     </div>
 
-    <!-- Adicionando scripts do Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-storage.js"></script>
+    <!-- Import Firebase SDKs -->
+    <script type="module">
+        // Firebase imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-app.js";
+        import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-database.js";
+        import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-storage.js";
 
-    <script>
-        // Configuração do Firebase para o chat
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCuYhMag13uhVsYGo6KFkGFF5COH9fMWGI",
             authDomain: "votacao-8176a.firebaseapp.com",
@@ -105,87 +101,76 @@
             measurementId: "G-BEQ9LWFRCS"
         };
 
-        // Inicializando o Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const storage = firebase.storage();
-
-        // Função para carregar mensagens do Firestore
-        function loadMessages() {
-            db.collection('messages').orderBy('timestamp').onSnapshot(snapshot => {
-                const chatContainer = document.getElementById('chat-container');
-                chatContainer.innerHTML = '';
-                snapshot.forEach(doc => {
-                    const messageData = doc.data();
-                    const messageElement = document.createElement('div');
-                    messageElement.className = 'chat-message';
-
-                    if (messageData.fileURL) {
-                        messageElement.innerHTML = `
-                            <img src="${messageData.img}" alt="Profile Image">
-                            <div class="message-content">
-                                <strong>${messageData.name}: </strong>
-                                <a href="${messageData.fileURL}" target="_blank" class="file-link">Arquivo enviado</a>
-                            </div>
-                        `;
-                    } else {
-                        messageElement.innerHTML = `
-                            <img src="${messageData.img}" alt="Profile Image">
-                            <div class="message-content">
-                                <strong>${messageData.name}: </strong>${messageData.message}
-                            </div>
-                        `;
-                    }
-
-                    chatContainer.appendChild(messageElement);
-                });
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            });
-        }
-
-        // Carregar mensagens ao iniciar
-        loadMessages();
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const storage = getStorage(app);
 
         // Obter o nome e a imagem do usuário do localStorage
         const name = localStorage.getItem('name');
         const img = localStorage.getItem('img');
 
-        // Enviar mensagem de texto
+        // Referência para o banco de dados onde as mensagens serão armazenadas
+        const messagesRef = ref(database, 'messages');
+
+        // Carregar mensagens existentes e escutar novas mensagens
+        onChildAdded(messagesRef, (snapshot) => {
+            const messageData = snapshot.val();
+            displayMessage(messageData.name, messageData.img, messageData.message);
+        });
+
+        // Função para exibir uma mensagem no chat
+        function displayMessage(name, img, message) {
+            const chatContainer = document.getElementById('chat-container');
+            const messageElement = document.createElement('div');
+            messageElement.className = 'chat-message';
+            messageElement.innerHTML = `
+                <img src="${img}" alt="Profile Image">
+                <div class="message-content">
+                    <strong>${name}: </strong>${message}
+                </div>
+            `;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight; // Rolar para a última mensagem
+        }
+
+        // Evento de clique para enviar uma mensagem
         document.getElementById('send-button').addEventListener('click', () => {
             const messageInput = document.getElementById('message-input');
             const message = messageInput.value.trim();
             if (message) {
-                db.collection('messages').add({
+                // Salvar a mensagem no banco de dados
+                push(messagesRef, {
                     name: name,
                     img: img,
-                    message: message,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    message: message
                 });
                 messageInput.value = '';
             }
         });
 
-        // Upload de arquivo e envio da mensagem com o link do arquivo
-        document.getElementById('file-input').addEventListener('change', async (event) => {
-            const file = event.target.files[0];
+        // Evento de envio de arquivo
+        document.getElementById('file-input').addEventListener('change', function() {
+            const file = this.files[0];
             if (file) {
-                const storageRef = storage.ref().child('uploads/' + file.name);
-                const uploadTask = storageRef.put(file);
+                const storageRef = sRef(storage, `uploads/${file.name}`);
+                const uploadTask = uploadBytesResumable(storageRef, file);
 
-                uploadTask.on('state_changed',
+                uploadTask.on('state_changed', 
                     (snapshot) => {
-                        // Pode-se adicionar um indicador de progresso aqui
-                    },
+                        // Acompanhamento do progresso de upload
+                    }, 
                     (error) => {
-                        console.error('Erro no upload:', error);
-                    },
-                    async () => {
-                        const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-                        db.collection('messages').add({
-                            name: name,
-                            img: img,
-                            fileURL: downloadURL,
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        console.error("Erro no upload: ", error);
+                    }, 
+                    () => {
+                        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                            // Enviar a URL do arquivo como mensagem
+                            push(messagesRef, {
+                                name: name,
+                                img: img,
+                                message: `<a href="${downloadURL}" target="_blank">${file.name}</a>`
+                            });
                         });
                     }
                 );
