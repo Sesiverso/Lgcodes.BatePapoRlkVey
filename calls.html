@@ -7,62 +7,77 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
             display: flex;
             flex-direction: column;
             height: 100vh;
-            background-color: #f7f7f7;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
         }
-        .container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
+
         #participants {
-            margin-bottom: 20px;
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            border-bottom: 1px solid #ccc;
         }
+
+        #participants-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
         .participant {
-            margin: 10px;
             padding: 10px;
-            border-radius: 8px;
             background-color: #fff;
+            margin-bottom: 10px;
+            border-radius: 4px;
             border: 1px solid #ccc;
-        }
-        .controls {
             display: flex;
-            justify-content: center;
             align-items: center;
         }
-        .controls button {
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            background-color: #007BFF;
-            color: white;
-            margin: 0 10px;
+
+        .participant img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
         }
-        .controls button:hover {
-            background-color: #0056b3;
+
+        #controls {
+            padding: 10px;
+            background-color: #fff;
+            border-top: 1px solid #ccc;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #endCallButton {
+            padding: 10px;
+            border: none;
+            background-color: #FF4136;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #endCallButton:hover {
+            background-color: #c23629;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div id="participants"></div>
-        <div class="controls">
-            <button id="endCallButton">Encerrar Chamada</button>
-            <button id="backToChatButton">Voltar ao Chat</button>
-        </div>
+    <div id="participants">
+        <ul id="participants-list"></ul>
+    </div>
+    <div id="controls">
+        <button id="endCallButton">Encerrar Chamada</button>
     </div>
 
-    <!-- Import Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-app.js";
-        import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-database.js";
 
         // Configuração do Firebase
         const firebaseConfig = {
@@ -79,120 +94,194 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
 
+        const callRef = ref(database, 'call/inCall');
         const participantsRef = ref(database, 'call/participants');
-        const callRef = ref(database, 'call');
-        const endCallButton = document.getElementById('endCallButton');
-        const backToChatButton = document.getElementById('backToChatButton');
-        const participantsDiv = document.getElementById('participants');
+        const currentUserId = 'user_' + Date.now(); // Gerar ID único para o usuário
 
-        let localStream;
-        let peerConnections = {};
-        const configuration = {
+        const participantsList = document.getElementById('participants-list');
+        const endCallButton = document.getElementById('endCallButton');
+
+        const peerConnections = {};
+        const servers = {
             iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' }
+                { urls: "stun:stun.l.google.com:19302" }
             ]
         };
 
         async function startCall() {
+            // Solicitar permissão para acessar o microfone
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                // Broadcast your stream
-                const localPeerConnection = new RTCPeerConnection(configuration);
-                localStream.getTracks().forEach(track => localPeerConnection.addTrack(track, localStream));
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-                localPeerConnection.onicecandidate = event => {
-                    if (event.candidate) {
-                        // Send the ICE candidate to the remote peer
+                // Adicionar participante à lista de participantes
+                const newParticipantRef = push(participantsRef);
+                set(newParticipantRef, {
+                    id: currentUserId,
+                    name: "Você",
+                    photoURL: "https://via.placeholder.com/40" // Substituir pela foto do perfil real
+                });
+
+                // Adicionar a própria stream de áudio para todos os peers conectados
+                onValue(participantsRef, snapshot => {
+                    participantsList.innerHTML = '';
+                    snapshot.forEach(childSnapshot => {
+                        const participant = childSnapshot.val();
+                        const listItem = document.createElement('li');
+                        listItem.classList.add('participant');
+
+                        const img = document.createElement('img');
+                        img.src = participant.photoURL;
+                        listItem.appendChild(img);
+
+                        const span = document.createElement('span');
+                        span.textContent = participant.name;
+                        listItem.appendChild(span);
+
+                        participantsList.appendChild(listItem);
+
+                        if (participant.id !== currentUserId) {
+                            createPeerConnection(participant.id, stream);
+                        }
+                    });
+                });
+
+                // Receber streams de outros peers
+                onValue(ref(database, 'call/iceCandidates'), snapshot => {
+                    const iceCandidates = snapshot.val();
+                    if (iceCandidates) {
+                        for (let id in iceCandidates) {
+                            if (peerConnections[id]) {
+                                peerConnections[id].addIceCandidate(new RTCIceCandidate(iceCandidates[id]));
+                            }
+                        }
                     }
-                };
+                });
 
-                // Notify Firebase that you are in a call
-                await set(ref(database, 'call/inCall'), true);
+                onValue(ref(database, 'call/offers'), snapshot => {
+                    const offers = snapshot.val();
+                    if (offers && offers[currentUserId]) {
+                        handleOffer(offers[currentUserId], stream);
+                    }
+                });
+
+                onValue(ref(database, 'call/answers'), snapshot => {
+                    const answers = snapshot.val();
+                    if (answers && peerConnections[answers.from]) {
+                        peerConnections[answers.from].setRemoteDescription(new RTCSessionDescription(answers.answer));
+                    }
+                });
+
             } catch (error) {
-                console.error('Erro ao acessar dispositivos de mídia.', error);
+                console.error("Permissão de microfone negada ou erro ao acessar o microfone:", error);
             }
         }
 
-        function handleNewParticipant(participantId) {
-            const participantDiv = document.createElement('div');
-            participantDiv.classList.add('participant');
-            participantDiv.id = `participant-${participantId}`;
-
-            // Create an audio element for the participant
-            const audio = document.createElement('audio');
-            audio.id = `audio-${participantId}`;
-            audio.autoplay = true;
-            participantDiv.appendChild(audio);
-
-            participantsDiv.appendChild(participantDiv);
-        }
-
-        function handleRemoteStream(event, participantId) {
-            const audio = document.getElementById(`audio-${participantId}`);
-            if (audio) {
-                audio.srcObject = event.streams[0];
-            }
-        }
-
-        function handleParticipantJoined(participantId) {
-            handleNewParticipant(participantId);
-
-            // Setup peer connection for the new participant
-            const peerConnection = new RTCPeerConnection(configuration);
+        function createPeerConnection(participantId, stream) {
+            const peerConnection = new RTCPeerConnection(servers);
             peerConnections[participantId] = peerConnection;
 
-            peerConnection.ontrack = event => handleRemoteStream(event, participantId);
+            stream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, stream);
+            });
+
             peerConnection.onicecandidate = event => {
                 if (event.candidate) {
-                    // Send the ICE candidate to the remote peer
+                    const iceCandidateRef = ref(database, `call/iceCandidates/${participantId}`);
+                    set(iceCandidateRef, event.candidate.toJSON());
                 }
             };
 
-            // TODO: Set up offer/answer process
-        }
+            peerConnection.ontrack = event => {
+                const audioElement = document.createElement('audio');
+                audioElement.srcObject = event.streams[0];
+                audioElement.autoplay = true;
+                document.body.appendChild(audioElement);
+            };
 
-        function handleParticipantLeft(participantId) {
-            const participantDiv = document.getElementById(`participant-${participantId}`);
-            if (participantDiv) {
-                participantDiv.remove();
-            }
-            delete peerConnections[participantId];
-        }
-
-        endCallButton.addEventListener('click', async () => {
-            await remove(ref(database, 'call/inCall'));
-            // Clean up peer connections
-            Object.values(peerConnections).forEach(peerConnection => peerConnection.close());
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-            }
-            window.location.href = 'chat.html';
-        });
-
-        backToChatButton.addEventListener('click', () => {
-            window.location.href = 'chat.html';
-        });
-
-        // Listen for changes to the call state and participants
-        onValue(ref(database, 'call/participants'), snapshot => {
-            const participants = snapshot.val();
-            if (participants) {
-                Object.keys(participants).forEach(participantId => {
-                    if (!document.getElementById(`participant-${participantId}`)) {
-                        handleParticipantJoined(participantId);
-                    }
+            peerConnection.createOffer().then(offer => {
+                peerConnection.setLocalDescription(offer);
+                const offerRef = ref(database, `call/offers/${participantId}`);
+                set(offerRef, {
+                    from: currentUserId,
+                    offer: offer.toJSON()
                 });
+            });
+        }
+
+        async function handleOffer(offer, stream) {
+            const peerConnection = new RTCPeerConnection(servers);
+            peerConnections[offer.from] = peerConnection;
+
+            stream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, stream);
+            });
+
+            peerConnection.onicecandidate = event => {
+                if (event.candidate) {
+                    const iceCandidateRef = ref(database, `call/iceCandidates/${offer.from}`);
+                    set(iceCandidateRef, event.candidate.toJSON());
+                }
+            };
+
+            peerConnection.ontrack = event => {
+                const audioElement = document.createElement('audio');
+                audioElement.srcObject = event.streams[0];
+                audioElement.autoplay = true;
+                document.body.appendChild(audioElement);
+            };
+
+            peerConnection.setRemoteDescription(new RTCSessionDescription(offer.offer));
+            peerConnection.createAnswer().then(answer => {
+                peerConnection.setLocalDescription(answer);
+                const answerRef = ref(database, `call/answers/${offer.from}`);
+                set(answerRef, {
+                    from: currentUserId,
+                    answer: answer.toJSON()
+                });
+            });
+        }
+
+        // Finalizar a chamada
+        endCallButton.addEventListener('click', async () => {
+            // Remover o participante atual
+            const participantToRemoveRef = ref(database, `call/participants/${currentUserId}`);
+            await remove(participantToRemoveRef);
+
+            // Fechar todas as conexões
+            for (let participantId in peerConnections) {
+                peerConnections[participantId].close();
             }
+
+            // Se não houver mais participantes, encerrar a chamada
+            onValue(participantsRef, snapshot => {
+                if (!snapshot.exists()) {
+                    set(callRef, false);
+                }
+            });
+
+            window.location.href = 'chat.html';
         });
 
-        onValue(ref(database, 'call/inCall'), snapshot => {
+        // Iniciar a chamada
+        onValue(callRef, async (snapshot) => {
             const inCall = snapshot.val();
             if (inCall) {
-                startCall();
-            } else {
-                endCallButton.style.display = 'none';
-                backToChatButton.style.display = 'block';
+                await startCall();
             }
+        });
+
+        // Sinalizar que o usuário está na chamada
+        set(callRef, true);
+
+        // Adicionar o usuário aos participantes quando a página for carregada
+        window.addEventListener('load', () => {
+            startCall();
+        });
+
+        // Remover o usuário dos participantes quando ele sair da página
+        window.addEventListener('beforeunload', async () => {
+            const participantToRemoveRef = ref(database, `call/participants/${currentUserId}`);
+            await remove(participantToRemoveRef);
         });
     </script>
 </body>
