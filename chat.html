@@ -111,12 +111,13 @@
     </div>
 
     <!-- Importando os SDKs do Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage.js"></script>
+    <script type="module">
+        // Importando funções necessárias do Firebase
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
+        import { getDatabase, ref, onChildAdded, push, set } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js';
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-storage.js';
 
-    <script>
-        // Firebase configuration
+        // Configuração do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyCuYhMag13uhVsYGo6KFkGFF5COH9fMWGI",
             authDomain: "votacao-8176a.firebaseapp.com",
@@ -128,18 +129,19 @@
             measurementId: "G-BEQ9LWFRCS"
         };
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const storage = firebase.storage();
+        // Inicializando o Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const storage = getStorage(app);
 
-        // Retrieve user profile data from localStorage
+        // Recuperando dados do perfil do localStorage
         const name = localStorage.getItem('name');
         const profileImg = localStorage.getItem('img');
 
-        // Load messages from Firebase
+        // Carregando mensagens do Firebase
         function loadMessages() {
-            database.ref('messages').on('child_added', (snapshot) => {
+            const messagesRef = ref(database, 'messages');
+            onChildAdded(messagesRef, (snapshot) => {
                 const message = snapshot.val();
                 const messageElement = document.createElement('div');
                 messageElement.className = 'message';
@@ -153,12 +155,12 @@
             });
         }
 
-        // Send a new message
+        // Enviar uma nova mensagem
         function sendMessage() {
             const messageInput = document.getElementById('inputMessage');
             const message = messageInput.value.trim();
             if (message) {
-                database.ref('messages').push({
+                push(ref(database, 'messages'), {
                     name: name,
                     img: profileImg,
                     message: message
@@ -167,12 +169,12 @@
             }
         }
 
-        // Upload a file
+        // Enviar um arquivo
         function uploadFile(file) {
-            const fileRef = storage.ref('files/' + file.name);
-            fileRef.put(file).then((snapshot) => {
-                snapshot.ref.getDownloadURL().then((downloadURL) => {
-                    database.ref('messages').push({
+            const fileRef = storageRef(storage, 'files/' + file.name);
+            uploadBytes(fileRef, file).then((snapshot) => {
+                getDownloadURL(snapshot.ref).then((downloadURL) => {
+                    push(ref(database, 'messages'), {
                         name: name,
                         img: profileImg,
                         message: `<a href="${downloadURL}" download>${file.name}</a>`
@@ -181,18 +183,15 @@
             });
         }
 
-        // Check for ongoing calls
+        // Verificar chamadas ativas
         function checkForCall() {
-            database.ref('currentCall').on('value', (snapshot) => {
-                if (snapshot.exists()) {
-                    document.getElementById('callNotification').style.display = 'block';
-                } else {
-                    document.getElementById('callNotification').style.display = 'none';
-                }
+            const callRef = ref(database, 'currentCall');
+            onChildAdded(callRef, (snapshot) => {
+                document.getElementById('callNotification').style.display = 'block';
             });
         }
 
-        // Event listeners for buttons
+        // Adicionar ouvintes aos botões
         document.getElementById('sendMessage').addEventListener('click', sendMessage);
         document.getElementById('fileInput').addEventListener('change', (event) => {
             const file = event.target.files[0];
@@ -202,14 +201,14 @@
         });
 
         document.getElementById('startCall').addEventListener('click', () => {
-            database.ref('currentCall').set({
+            set(ref(database, 'currentCall'), {
                 name: name,
                 img: profileImg
             });
             window.location.href = 'calls.html';
         });
 
-        // Initial load
+        // Inicializar
         loadMessages();
         checkForCall();
     </script>
