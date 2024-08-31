@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chamadas</title>
+    <title>Chamadas de Voz</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
             display: flex;
             flex-direction: column;
             height: 100vh;
+            background-color: #f4f4f4;
         }
 
         #participants {
@@ -42,19 +42,24 @@
             margin-right: 10px;
         }
 
+        .participant-name {
+            font-weight: bold;
+        }
+
         #controls {
             display: flex;
             padding: 10px;
             background-color: #fff;
             border-top: 1px solid #ccc;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        #muteButton, #endCallButton {
+        #controls button {
             padding: 10px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            margin-right: 10px;
         }
 
         #muteButton {
@@ -75,6 +80,15 @@
             cursor: pointer;
             display: none;
         }
+
+        .audio-player {
+            margin-top: 10px;
+        }
+
+        .audio-player audio {
+            width: 100%;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -88,7 +102,7 @@
     <!-- Importando os SDKs do Firebase e WebRTC -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
-        import { getDatabase, ref, onChildAdded, onChildRemoved, set } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js';
+        import { getDatabase, ref, set, onChildAdded, onChildRemoved } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js';
         import { getStorage, ref as storageRef, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-storage.js';
 
         // Configuração do Firebase
@@ -112,16 +126,21 @@
         const peerConnections = {};
         const participantsRef = ref(database, 'participants');
         const callRef = ref(database, 'currentCall');
+        const localParticipant = {
+            id: Date.now().toString(),
+            name: localStorage.getItem('name'),
+            img: localStorage.getItem('img')
+        };
 
         // Função para solicitar permissão de microfone
         async function getUserMedia() {
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                localStream.getTracks().forEach(track => {
-                    const peerConnection = new RTCPeerConnection();
-                    peerConnection.addTrack(track, localStream);
-                    peerConnections[track.id] = peerConnection;
-                });
+                const audioElement = document.createElement('audio');
+                audioElement.srcObject = localStream;
+                audioElement.autoplay = true;
+                audioElement.muted = true;
+                document.body.appendChild(audioElement);
             } catch (err) {
                 console.error('Erro ao acessar o microfone: ', err);
             }
@@ -135,7 +154,10 @@
             });
             const offer = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offer);
-            set(ref(database, 'currentCall/offer'), offer);
+            set(ref(database, 'currentCall/offer'), {
+                offer: offer,
+                participant: localParticipant
+            });
             peerConnections[peerConnection.id] = peerConnection;
         }
 
@@ -146,7 +168,7 @@
             participantElement.id = participant.id;
             participantElement.innerHTML = `
                 <img src="${participant.img}" alt="Profile Image">
-                <div>${participant.name}</div>
+                <div class="participant-name">${participant.name}</div>
             `;
             document.getElementById('participants').appendChild(participantElement);
         }
@@ -160,12 +182,15 @@
         }
 
         // Função para lidar com a resposta de chamada
-        function handleOffer(offer) {
+        function handleOffer(offerData) {
             const peerConnection = new RTCPeerConnection();
-            peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+            peerConnection.setRemoteDescription(new RTCSessionDescription(offerData.offer));
             peerConnection.createAnswer().then(answer => {
                 peerConnection.setLocalDescription(answer);
-                set(ref(database, 'currentCall/answer'), answer);
+                set(ref(database, 'currentCall/answer'), {
+                    answer: answer,
+                    participant: localParticipant
+                });
             });
             peerConnection.ontrack = event => {
                 const audioElement = document.createElement('audio');
@@ -179,10 +204,10 @@
         // Função para lidar com as mensagens de chamada
         function handleCallMessages(snapshot) {
             const data = snapshot.val();
-            if (data.offer) {
-                handleOffer(data.offer);
-            } else if (data.answer) {
-                const peerConnection = peerConnections[data.id];
+            if (data && data.offer) {
+                handleOffer(data);
+            } else if (data && data.answer) {
+                const peerConnection = peerConnections[data.participant.id];
                 peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
             }
         }
@@ -195,16 +220,14 @@
 
         // Função para iniciar o sistema de chamadas
         function startCall() {
-            set(ref(database, 'currentCall'), {
-                name: localStorage.getItem('name'),
-                img: localStorage.getItem('img')
-            });
+            set(ref(database, 'participants/' + localParticipant.id), localParticipant);
             initCall();
         }
 
         // Função para encerrar a chamada
         function endCall() {
             set(ref(database, 'currentCall'), null);
+            set(ref(database, 'participants/' + localParticipant.id), null);
             window.location.href = 'chat.html';
         }
 
@@ -232,12 +255,12 @@
 
         // Monitorando as chamadas
         onChildAdded(callRef, handleCallMessages);
-        onChildRemoved(callRef, () => {
-            document.getElementById('status').style.display = 'none';
-        });
 
         // Mostrar notificação de chamada em andamento
         document.getElementById('status').style.display = 'block';
+
+        // Iniciar a chamada
+        startCall();
     </script>
 </body>
 </html>
