@@ -3,112 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat</title>
+    <title>Chat com Chamada de Voz</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
             display: flex;
             flex-direction: column;
             height: 100vh;
-            background-color: #f7f7f7;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
         }
-        .chat-container {
+
+        #chat-container {
             flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        .messages {
-            flex: 1;
-            padding: 10px;
+            padding: 20px;
             overflow-y: auto;
-            background-color: #fff;
             border-bottom: 1px solid #ccc;
         }
-        .message {
-            margin-bottom: 10px;
-        }
-        .controls {
-            padding: 10px;
-            border-top: 1px solid #ccc;
-            background-color: #fff;
+
+        #message-input-container {
             display: flex;
-            align-items: center;
+            padding: 10px;
+            background-color: #fff;
+            border-top: 1px solid #ccc;
         }
-        .controls input[type="text"] {
+
+        #messageInput {
             flex: 1;
             padding: 10px;
-            border-radius: 8px;
             border: 1px solid #ccc;
+            border-radius: 4px;
             margin-right: 10px;
         }
-        .controls button {
-            padding: 10px 15px;
-            border-radius: 8px;
+
+        #sendMessageButton, #uploadImageButton, #startCallButton {
+            padding: 10px;
             border: none;
-            cursor: pointer;
             background-color: #007BFF;
             color: white;
-            margin-right: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
         }
-        .controls button:hover {
+
+        #sendMessageButton:hover, #uploadImageButton:hover, #startCallButton:hover {
             background-color: #0056b3;
         }
-        .upload-button {
-            padding: 10px 15px;
-            border-radius: 8px;
+
+        #callNotification {
+            padding: 10px;
+            background-color: #ffeb3b;
+            text-align: center;
+            border-bottom: 1px solid #ccc;
+        }
+
+        #callNotification button {
+            padding: 5px 10px;
+            margin-left: 10px;
             border: none;
-            cursor: pointer;
-            background-color: #28a745;
-            color: white;
-        }
-        .upload-button:hover {
-            background-color: #218838;
-        }
-        .call-notification {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
             background-color: #007BFF;
             color: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .call-notification button {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 8px;
+            border-radius: 4px;
             cursor: pointer;
         }
-        .call-notification button:hover {
-            background-color: #218838;
+
+        #messages {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .message {
+            padding: 10px;
+            background-color: #fff;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        .message img {
+            max-width: 100%;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="messages" id="messages"></div>
-        <div class="controls">
-            <input type="text" id="messageInput" placeholder="Digite sua mensagem...">
-            <button id="sendButton">Enviar</button>
-            <button id="uploadButton" class="upload-button">Enviar Arquivo</button>
-            <button id="callButton">Iniciar Chamada</button>
-        </div>
+    <div id="callNotification" style="display: none;">
+        Uma chamada está em andamento. <button id="joinCallButton">Participar</button>
     </div>
-    <div id="callNotification" class="call-notification">
-        <p>Uma chamada está em andamento!</p>
-        <button id="joinCallButton">Participar</button>
+
+    <div id="chat-container">
+        <ul id="messages"></ul>
+    </div>
+
+    <div id="message-input-container">
+        <input type="text" id="messageInput" placeholder="Digite sua mensagem...">
+        <button id="sendMessageButton">Enviar</button>
+        <button id="uploadImageButton">Enviar Imagem</button>
+        <button id="startCallButton">Iniciar Chamada</button>
     </div>
 
     <!-- Import Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-app.js";
-        import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-database.js";
+        import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-database.js";
         import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.13.0/firebase-storage.js";
 
         // Configuração do Firebase
@@ -128,62 +127,89 @@
         const storage = getStorage(app);
 
         const messagesRef = ref(database, 'messages');
-        const callRef = ref(database, 'call');
-        const callNotification = document.getElementById('callNotification');
-        const joinCallButton = document.getElementById('joinCallButton');
+        const callRef = ref(database, 'call/inCall');
+        const participantsRef = ref(database, 'call/participants');
 
-        const messagesDiv = document.getElementById('messages');
         const messageInput = document.getElementById('messageInput');
-        const sendButton = document.getElementById('sendButton');
-        const uploadButton = document.getElementById('uploadButton');
-        const callButton = document.getElementById('callButton');
+        const sendMessageButton = document.getElementById('sendMessageButton');
+        const uploadImageButton = document.getElementById('uploadImageButton');
+        const startCallButton = document.getElementById('startCallButton');
+        const joinCallButton = document.getElementById('joinCallButton');
+        const callNotification = document.getElementById('callNotification');
+        const messagesList = document.getElementById('messages');
 
-        function displayMessage(message) {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message');
-            messageElement.textContent = message;
-            messagesDiv.appendChild(messageElement);
-        }
-
-        sendButton.addEventListener('click', () => {
-            const message = messageInput.value;
-            if (message.trim()) {
-                set(ref(messagesRef, Date.now()), { text: message });
+        // Enviar mensagem de texto
+        sendMessageButton.addEventListener('click', () => {
+            const text = messageInput.value.trim();
+            if (text) {
+                const newMessageRef = push(messagesRef);
+                set(newMessageRef, {
+                    type: 'text',
+                    content: text,
+                    timestamp: Date.now()
+                });
                 messageInput.value = '';
             }
         });
 
-        uploadButton.addEventListener('change', async (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                const fileRef = storageRef(storage, 'chat/' + file.name);
-                await uploadBytes(fileRef, file);
-                const fileURL = await getDownloadURL(fileRef);
-                set(ref(messagesRef, Date.now()), { text: fileURL });
-            }
-        });
+        // Enviar imagem
+        uploadImageButton.addEventListener('click', async () => {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.onchange = async (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const storageReference = storageRef(storage, 'images/' + file.name);
+                    await uploadBytes(storageReference, file);
+                    const downloadURL = await getDownloadURL(storageReference);
 
-        callButton.addEventListener('click', () => {
-            window.location.href = 'calls.html';
-        });
-
-        joinCallButton.addEventListener('click', () => {
-            window.location.href = 'calls.html';
-        });
-
-        onValue(messagesRef, (snapshot) => {
-            messagesDiv.innerHTML = '';
-            snapshot.forEach((childSnapshot) => {
-                const message = childSnapshot.val();
-                if (message.text) {
-                    displayMessage(message.text);
+                    const newMessageRef = push(messagesRef);
+                    set(newMessageRef, {
+                        type: 'image',
+                        content: downloadURL,
+                        timestamp: Date.now()
+                    });
                 }
+            };
+            fileInput.click();
+        });
+
+        // Iniciar chamada
+        startCallButton.addEventListener('click', async () => {
+            await set(callRef, true);
+            window.location.href = 'call.html';
+        });
+
+        // Participar da chamada
+        joinCallButton.addEventListener('click', () => {
+            window.location.href = 'call.html';
+        });
+
+        // Exibir mensagens
+        onValue(messagesRef, snapshot => {
+            messagesList.innerHTML = '';
+            snapshot.forEach(childSnapshot => {
+                const message = childSnapshot.val();
+                const listItem = document.createElement('li');
+                listItem.classList.add('message');
+
+                if (message.type === 'text') {
+                    listItem.textContent = message.content;
+                } else if (message.type === 'image') {
+                    const img = document.createElement('img');
+                    img.src = message.content;
+                    listItem.appendChild(img);
+                }
+
+                messagesList.appendChild(listItem);
             });
         });
 
-        onValue(callRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data && data.inCall) {
+        // Monitorar chamadas em andamento
+        onValue(callRef, snapshot => {
+            const inCall = snapshot.val();
+            if (inCall) {
                 callNotification.style.display = 'block';
             } else {
                 callNotification.style.display = 'none';
