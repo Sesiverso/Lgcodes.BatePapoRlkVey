@@ -137,6 +137,14 @@
             }
         }
 
+        // Limpa a lista de participantes
+        function clearParticipantList() {
+            const participantList = document.getElementById('participants');
+            while (participantList.firstChild) {
+                participantList.removeChild(participantList.firstChild);
+            }
+        }
+
         // Configura o WebRTC Peer Connection
         function setupPeerConnection(id) {
             const peerConnection = new RTCPeerConnection();
@@ -237,6 +245,9 @@
             // Encerra a chamada atual
             set(ref(database, 'currentCall'), null);
 
+            // Limpa a lista de participantes da UI
+            clearParticipantList();
+
             // Redireciona para o chat
             window.location.href = 'chat.html';
         }
@@ -281,12 +292,7 @@
 
         // Remove o usuário do Firebase
         function removeUserFromFirebase() {
-            remove(ref(database, `participants/${localPeerId}`))
-                .then(() => {
-                    update(ref(database, 'currentCall'), {
-                        [`participants/${localPeerId}`]: null
-                    });
-                });
+            remove(ref(database, `participants/${localPeerId}`));
         }
 
         // Inicializa a chamada
