@@ -104,9 +104,7 @@
     <div id="controls">
         <input type="text" id="inputMessage" placeholder="Digite sua mensagem...">
         <button id="sendMessage">Enviar</button>
-        <label for="fileInput">
-            <button id="sendFile">Enviar Arquivo</button>
-        </label>
+        <button id="sendFile">Enviar Arquivo</button>
         <input type="file" id="fileInput" style="display: none;">
         <button id="startCall">Iniciar Chamada</button>
     </div>
@@ -194,6 +192,12 @@
 
         // Adicionar ouvintes aos botões
         document.getElementById('sendMessage').addEventListener('click', sendMessage);
+
+        // Abrir o explorador de arquivos ao clicar no botão "Enviar Arquivo"
+        document.getElementById('sendFile').addEventListener('click', () => {
+            document.getElementById('fileInput').click();
+        });
+
         document.getElementById('fileInput').addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (file) {
