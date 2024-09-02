@@ -187,16 +187,12 @@
         function setupFirebaseListeners() {
             onValue(participantsRef, snapshot => {
                 const participants = snapshot.val() || {};
-                const name = localStorage.getItem('name');
                 Object.keys(participants).forEach(id => {
-                    const participant = participants[id];
-
-                    // Verifica se há outro participante com o mesmo nome
-                    if (participant.name === name && id !== localPeerId) {
-                        // Expulsa o participante anterior
-                        remove(ref(database, `participants/${id}`));
-                    } else if (id !== localPeerId && !document.getElementById(`participant-${id}`)) {
-                        addParticipant(id, participant.name, participant.img);
+                    if (id !== localPeerId) {
+                        const participant = participants[id];
+                        if (participant.name && !document.getElementById(`participant-${id}`)) {
+                            addParticipant(id, participant.name, participant.img);
+                        }
                     }
                 });
             });
@@ -228,6 +224,28 @@
             });
             peerConnections = {};
             set(ref(database, 'currentCall'), null);
+        }
+
+        // Gerencia os participantes
+        function manageParticipants(participants) {
+            const currentPeerIds = new Set(Object.keys(participants));
+            const participantIds = new Set(Object.keys(peerConnections));
+
+            // Remover participantes que não estão mais na chamada
+            participantIds.forEach(id => {
+                if (!currentPeerIds.has(id)) {
+                    removeParticipant(id);
+                    delete peerConnections[id];
+                }
+            });
+
+            // Adicionar novos participantes
+            currentPeerIds.forEach(id => {
+                if (!peerConnections[id]) {
+                    setupPeerConnection(id);
+                    handleSignaling(participants[id]);
+                }
+            });
         }
 
         // Inicializa a chamada e a configuração
