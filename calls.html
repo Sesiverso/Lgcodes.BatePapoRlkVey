@@ -101,7 +101,7 @@
 
         const localStream = new MediaStream();
         let peerConnections = {};
-        let localPeerId = Date.now().toString(); // Unique ID for this peer
+        const localPeerId = Date.now().toString(); // Unique ID for this peer
         const callRef = ref(database, 'currentCall');
         const participantsRef = ref(database, 'participants');
 
@@ -231,9 +231,8 @@
             });
             peerConnections = {};
 
-            // Remove o usuário da lista de participantes
-            removeParticipant(localPeerId);
-            remove(ref(database, `participants/${localPeerId}`));
+            // Remove todos os participantes do Firebase
+            remove(ref(database, 'participants'));
 
             // Encerra a chamada atual
             set(ref(database, 'currentCall'), null);
