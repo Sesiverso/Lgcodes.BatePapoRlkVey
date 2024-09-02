@@ -45,7 +45,7 @@
             border-top: 1px solid #ccc;
         }
 
-        #muteButton, #hangupButton {
+        #muteButton, #hangupButton, #endCallButton {
             padding: 10px;
             border-radius: 4px;
             border: none;
@@ -62,6 +62,11 @@
             background-color: #f44336;
             color: white;
         }
+
+        #endCallButton {
+            background-color: #2196F3;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -70,6 +75,7 @@
     <div id="controls">
         <button id="muteButton">Mute</button>
         <button id="hangupButton">Hang Up</button>
+        <button id="endCallButton">End Call</button>
     </div>
 
     <!-- Importando os SDKs do Firebase -->
@@ -217,17 +223,27 @@
             });
         }
 
-        // Finaliza a chamada
-        function hangUp() {
+        // Finaliza a chamada e redireciona para o chat
+        function endCall() {
+            // Encerra as conexões de todos os participantes
             Object.keys(peerConnections).forEach(id => {
                 peerConnections[id].close();
             });
             peerConnections = {};
+
+            // Remove o usuário da lista de participantes
+            removeParticipant(localPeerId);
+            remove(ref(database, `participants/${localPeerId}`));
+
+            // Encerra a chamada atual
             set(ref(database, 'currentCall'), null);
+
+            // Redireciona para o chat
+            window.location.href = 'chat.html';
         }
 
-        // Gerencia os participantes
-        function manageParticipants(participants) {
+        // Atualiza a lista de participantes
+        function updateParticipants(participants) {
             const currentPeerIds = new Set(Object.keys(participants));
             const participantIds = new Set(Object.keys(peerConnections));
 
@@ -248,27 +264,47 @@
             });
         }
 
-        // Inicializa a chamada e a configuração
-        function startCall() {
-            setupLocalStream();
-            setupFirebaseListeners();
-
+        // Adiciona o usuário ao Firebase
+        function addUserToFirebase() {
             const participantData = {
                 name: localStorage.getItem('name'),
                 img: localStorage.getItem('img'),
                 iceCandidates: {}
             };
 
-            set(ref(database, `participants/${localPeerId}`), participantData);
-            set(ref(database, 'currentCall'), { participants: { [localPeerId]: participantData } });
+            set(ref(database, `participants/${localPeerId}`), participantData)
+                .then(() => {
+                    set(ref(database, 'currentCall'), {
+                        participants: { [localPeerId]: participantData }
+                    });
+                });
         }
 
-        // Adiciona ouvintes aos botões
-        document.getElementById('muteButton').addEventListener('click', toggleMute);
-        document.getElementById('hangupButton').addEventListener('click', hangUp);
+        // Remove o usuário do Firebase
+        function removeUserFromFirebase() {
+            remove(ref(database, `participants/${localPeerId}`))
+                .then(() => {
+                    update(ref(database, 'currentCall'), {
+                        [`participants/${localPeerId}`]: null
+                    });
+                });
+        }
 
-        // Inicia a chamada ao carregar
-        startCall();
+        // Inicializa a chamada
+        function initCall() {
+            setupLocalStream();
+            setupFirebaseListeners();
+            addUserToFirebase();
+
+            document.getElementById('muteButton').addEventListener('click', toggleMute);
+            document.getElementById('hangupButton').addEventListener('click', () => {
+                removeUserFromFirebase();
+                endCall();
+            });
+            document.getElementById('endCallButton').addEventListener('click', endCall);
+        }
+
+        initCall();
     </script>
 </body>
 </html>
