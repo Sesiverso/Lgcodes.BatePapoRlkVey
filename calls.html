@@ -75,7 +75,7 @@
     <!-- Importando os SDKs do Firebase -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
-        import { getDatabase, ref, onValue, set, update } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js';
+        import { getDatabase, ref, onValue, set, update, remove } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js';
 
         // Configuração do Firebase
         const firebaseConfig = {
@@ -187,12 +187,16 @@
         function setupFirebaseListeners() {
             onValue(participantsRef, snapshot => {
                 const participants = snapshot.val() || {};
+                const name = localStorage.getItem('name');
                 Object.keys(participants).forEach(id => {
-                    if (id !== localPeerId) {
-                        const participant = participants[id];
-                        if (participant.name && !document.getElementById(`participant-${id}`)) {
-                            addParticipant(id, participant.name, participant.img);
-                        }
+                    const participant = participants[id];
+
+                    // Verifica se há outro participante com o mesmo nome
+                    if (participant.name === name && id !== localPeerId) {
+                        // Expulsa o participante anterior
+                        remove(ref(database, `participants/${id}`));
+                    } else if (id !== localPeerId && !document.getElementById(`participant-${id}`)) {
+                        addParticipant(id, participant.name, participant.img);
                     }
                 });
             });
