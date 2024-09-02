@@ -92,6 +92,14 @@
             cursor: pointer;
             border-top: 1px solid #ccc;
         }
+
+        .image-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+        }
     </style>
 </head>
 <body>
@@ -144,12 +152,24 @@
                 const message = snapshot.val();
                 const messageElement = document.createElement('div');
                 messageElement.className = 'message';
-                messageElement.innerHTML = `
-                    <img src="${message.img}" alt="Profile Image">
-                    <div class="message-content">
-                        <strong>${message.name}:</strong> ${message.message}
-                    </div>
-                `;
+
+                if (message.type === 'text') {
+                    messageElement.innerHTML = `
+                        <img src="${message.img}" alt="Profile Image">
+                        <div class="message-content">
+                            <strong>${message.name}:</strong> ${message.content}
+                        </div>
+                    `;
+                } else if (message.type === 'image') {
+                    messageElement.innerHTML = `
+                        <img src="${message.img}" alt="Profile Image">
+                        <div class="message-content">
+                            <strong>${message.name}:</strong> <br>
+                            <img src="${message.content}" class="image-preview" alt="Uploaded Image">
+                        </div>
+                    `;
+                }
+
                 document.getElementById('messages').appendChild(messageElement);
             });
         }
@@ -162,21 +182,46 @@
                 push(ref(database, 'messages'), {
                     name: name,
                     img: profileImg,
-                    message: message
+                    content: message,
+                    type: 'text'
                 });
                 messageInput.value = '';
             }
         }
 
-        // Enviar um arquivo
-        function uploadFile(file) {
+        // Exibir prévia da imagem e depois fazer o upload
+        function previewAndUploadImage(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Exibe a prévia da imagem no chat
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message';
+                messageElement.innerHTML = `
+                    <img src="${profileImg}" alt="Profile Image">
+                    <div class="message-content">
+                        <strong>${name}:</strong> <br>
+                        <img src="${e.target.result}" class="image-preview" alt="Image Preview">
+                    </div>
+                `;
+                document.getElementById('messages').appendChild(messageElement);
+
+                // Depois que a prévia é exibida, fazer o upload da imagem para o Firebase
+                uploadImageToFirebase(file);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Enviar um arquivo (imagem) para o Firebase Storage
+        function uploadImageToFirebase(file) {
             const fileRef = storageRef(storage, 'files/' + file.name);
             uploadBytes(fileRef, file).then((snapshot) => {
                 getDownloadURL(snapshot.ref).then((downloadURL) => {
+                    // Adiciona a imagem ao chat
                     push(ref(database, 'messages'), {
                         name: name,
                         img: profileImg,
-                        message: `<a href="${downloadURL}" download>${file.name}</a>`
+                        content: downloadURL,
+                        type: 'image'
                     });
                 });
             });
@@ -201,7 +246,7 @@
         document.getElementById('fileInput').addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (file) {
-                uploadFile(file);
+                previewAndUploadImage(file);
             }
         });
 
